@@ -1,7 +1,6 @@
 #pragma once
 #include "ahci_helper.h"
 #include "ahci_port.h"
-#include "kernel/Sleep.hpp"
 
 namespace drivers::ahci {
     class ahci_device {
@@ -11,9 +10,7 @@ namespace drivers::ahci {
 
         bool initialize();
         bool read(const u64 start, const u32 count, u16* buffer) const {
-            const bool error = port->read(start, count, buffer, sector_size);
-            Time::Sleep(10);
-            return error;
+            return port->read(start, count, buffer, sector_size);
         }
 
         bool read_bytes(const u64 start, const i32 count, u16* buffer) const {

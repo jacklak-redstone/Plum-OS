@@ -82,6 +82,7 @@ namespace drivers::ahci {
         start();
 
         // Configure which interrupts to enable
+        clear_interrupt_errors();
         port->interrupts_enabled.cold_port_detect_interrupt = true;
         port->interrupts_enabled.task_file_error_interrupt = true;
         port->interrupts_enabled.host_bus_fatal_error_interrupt = true;
@@ -91,6 +92,7 @@ namespace drivers::ahci {
         port->interrupts_enabled.incorrect_port_multiplier_interrupt = true;
         port->interrupts_enabled.unknown_fis_interrupt = true;
         port->interrupts_enabled.port_connect_change_interrupt = true;
+        port->interrupts_enabled.device_to_host_fis_interrupt = true;
     }
 
     void ahci_port::start() const {
@@ -307,6 +309,8 @@ namespace drivers::ahci {
             log::warn("AHCI: PHY ready change");
         if (port->interrupt_status.port_connect_change_interrupt)
             log::warn("AHCI: device connected/disconnected on port %i", port_num);
+        if (port->interrupt_status.device_to_host_fis_interrupt)
+            has_received_command_data = true;
 
         if (has_errored) { // fatal error so do error recovery
             const u8 error_slot = (port->command_status >> 8) & 0x1F;
@@ -326,6 +330,8 @@ namespace drivers::ahci {
                     port->command_issue |= (1 << i);
             }
         }
+
+        clear_interrupt_errors();
     }
 
     bool ahci_port::issue_command(const u8 slot) {
@@ -334,7 +340,11 @@ namespace drivers::ahci {
         x64::set_INT_flag(false);
         port->command_issue = 1 << slot;
         x64::set_INT_flag(true);
-        return wait_for_port_completion(slot);
+        if (!wait_for_port_completion(slot))
+            return false;
+        while (!has_received_command_data) {}
+        has_received_command_data = false;
+        return true;
     }
 
     void ahci_port::clear_interrupt_errors() {
