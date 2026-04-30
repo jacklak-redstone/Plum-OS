@@ -88,7 +88,7 @@ namespace systemPL {
 
         Time::Sleep(100);
 
-        const auto device = ahci.request_device(0);
+        auto device = ahci.request_device(0);
         partition_manager.init(device);
 
         //drivers::ata::device(false);

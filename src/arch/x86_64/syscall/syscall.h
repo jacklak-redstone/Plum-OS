@@ -83,3 +83,11 @@ inline void sys_swap_framebuffer() {
         : "a"(9ULL)
         : "rcx", "r11", "memory");
 }
+
+inline void sys_list_parts() {
+    u64 ret;
+    asm volatile("syscall"
+        : "=a"(ret)
+        : "a"(10ULL)
+        : "rcx", "r11", "memory");
+}

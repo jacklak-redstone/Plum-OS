@@ -3,8 +3,6 @@
 #include "kernel/log.h"
 
 namespace fs::partition {
-    partition_manager::partition_manager() : header() { }
-
     // https://gist.github.com/xobs/91a84d29152161e973d717b9be84c4d0
     u32 crc32(const u8* data, const u32 len) {
         int i = 0;
@@ -20,8 +18,8 @@ namespace fs::partition {
         return ~crc;
     }
 
-    void partition_manager::init(const drivers::ahci::ahci_device& dev) {
-        log::info("Partition Manager initializeing.");
+    void partition_manager::init(drivers::ahci::ahci_device& dev) {
+        device = &dev;
 
         const auto buf = static_cast<u16*>(heap::malloc_align(512, 4));
         if (!dev.read(1, 1, buf)) {
@@ -79,6 +77,29 @@ namespace fs::partition {
 
         heap::free_align(partitions_buf);
         heap::free_align(buf);
+    }
+
+    void partition_manager::list_partitions() {
+        for (u32 i = 0; i < header->partition_entry_count; i++) {
+            auto partition = &partitions.data[i];
+            if (mem::memcmp(partition->type_guid, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16) == true)
+                continue;
+            if (partition->starting_lba == 0)
+                continue;
+            if (partition->name[0] == 0)
+                continue;
+
+            char name_buf[37] = {};
+            for (int j = 0; j < 36; j++) {
+                u16 wc = partition->name[j];
+                if (wc == 0) break;
+                name_buf[j] = static_cast<char>(wc & 0xFF);
+            }
+
+            log::info("[ GPT ] Found partition %i with name of '%s'", i, name_buf);
+            auto part_size = static_cast<double>(partition->ending_lba - partition->starting_lba) * static_cast<double>(device->get_sector_size());
+            log::info("[ GPT ] Partition size: %f%s", part_size, std::format_size(part_size));
+        }
     }
 
     bool partition_manager::validate_gpt() const {
