@@ -342,8 +342,13 @@ namespace drivers::ahci {
         x64::set_INT_flag(true);
         if (!wait_for_port_completion(slot))
             return false;
-        while (!has_received_command_data) {}
-        has_received_command_data = false;
+
+        for (int i = 0; i < 1000000000; ++i) {
+            if (has_received_command_data) {
+                has_received_command_data = false;
+                return true;
+            }
+        }
         return true;
     }
 
