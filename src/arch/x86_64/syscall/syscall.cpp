@@ -31,6 +31,7 @@ enum class syscall : u64 {
     pci = 7,
     heap = 8,
     swap_framebuffer = 9,
+    list_partitions = 10,
 };
 
 extern "C" u64 dispatch_syscall(u64 id, u64 arg1, u64 arg2, u64 arg3) {
@@ -75,6 +76,9 @@ extern "C" u64 dispatch_syscall(u64 id, u64 arg1, u64 arg2, u64 arg3) {
             return 0;
         case syscall::swap_framebuffer:
             systemPL::fb.swap();
+            return 0;
+        case syscall::list_partitions:
+            systemPL::partition_manager.list_partitions();
             return 0;
         default:
             return static_cast<u64>(-1); // ENOSYS

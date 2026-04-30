@@ -1,11 +1,11 @@
-# Kopalnia-OS
-- Very basic 64bit *kernel* made by PLSiorbpl in **C++** and **asm**.
+# Plum-OS
+- Very basic 64bit *kernel* made by PLSiorbpl and Imated in **C++** and **asm**.
 - _**Should**_ work on all modern and older CPUs supporting long mode (64bit mode).
 - Boots in **legacy** mode **(be careful on real machine)**
 
 ## Structure
 ```bash
-Kopalnia-OS/
+Plum-OS/
 ├── isodir/   # used to create bootable .iso
 ├── src/      # Source code
 │   ├── arch/       # All arch dependent stuff

@@ -93,6 +93,9 @@ Command commands[10] = {
         }
     },
     {
+        "partitions", [] {
+            sys_list_parts();
+        }
     },
 };
 
