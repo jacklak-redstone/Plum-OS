@@ -1,33 +1,36 @@
 # Plum-OS
-- Very basic 64bit *kernel* made by PLSiorbpl and Imated in **C++** and **asm**.
-- _**Should**_ work on all modern and older CPUs supporting long mode (64bit mode).
-- Boots in **legacy** mode **(be careful on real machine)**
+- Very basic 64bit UEFI kernel made by PLSiorbpl and Imated in **C++**
+- _**Should**_ work on all modern and older Computers supporting UEFI
+- Boots in **UEFI** **(be careful on real machine)**
 
 ## Structure
 ```bash
 Plum-OS/
-├── isodir/   # used to create bootable .iso
-├── src/      # Source code
+├── src/      # Kernel Source code
 │   ├── arch/       # All arch dependent stuff
 │   │   └── x86/
 │   │
-│   ├── Drivers/    # Drivers code
-│   ├── kernel/     # Kernel code
-│   ├── PLib/       # Standard library
-│   └── Kernel.cpp  # Main Kernel file
+│   ├── Drivers/    # Drivers (xHCI, aHCI, GPU, ATA)
+│   ├── kernel/     # kernel systems
+│   ├── libs/       # Libraries
+│   │   └── std/    # Standard library (std)
+│   ├── kernel.cpp/ # Kernel start
+│   └── kernel.h 
 │
-├── CMakeLists.txt    # Build Kernel.elf, iso and runs it in qemu
-├── build.bash  # Alternative to CMake
-└── Linker.ld   # Linker settings
+├── CMakeLists.txt    # Build UEFI kernel and runs it in QEMU
+└── Linker.ld   # Linker script
 ```
 
 ### Commands
 - help
 - clear
-- echo
 - poweroff (QEMU only)
 - sleep
 - heap
+- pci
+- size
+- usb
+- colors
 
 ## Building
 Using CMake:
@@ -36,6 +39,7 @@ Using CMake:
 > cd build/
 > cmake ..
 > make run    # Automatically runs qemu (VM) and build ISO
-# Alternatively just make (wont build ISO and run qemu)
-> make
+
+# Alternative: Make only needed Kernel.elf and BOOTX64.EFI
+> make build
 ```
