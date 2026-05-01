@@ -119,7 +119,7 @@ set(CMAKE_CXX_COMPILER clang++)
 project(Plum-OS C CXX)
 
 add_executable(BOOTX64.EFI
-        hello.cpp
+        src_boot/boot.cpp
 )
 
 target_include_directories(BOOTX64.EFI PUBLIC
@@ -168,17 +168,14 @@ target_link_options(BOOTX64.EFI PRIVATE
 )
 
 add_custom_target(run
-        COMMAND dd if=/dev/zero of=../fat.img bs=1M count=64
-        COMMAND mformat -i ../fat.img -F -v EFI ::
-        COMMAND mmd -i ../fat.img ::/EFI
-        COMMAND mmd -i ../fat.img ::/EFI/BOOT
-        COMMAND mcopy -i ../fat.img BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
+        COMMAND dd if=/dev/zero of=../Images/fat.img bs=1M count=64
+        COMMAND mformat -i ../Images/fat.img -F -v EFI ::
+        COMMAND mmd -i ../Images/fat.img ::/EFI
+        COMMAND mmd -i ../Images/fat.img ::/EFI/BOOT
+        COMMAND mcopy -i ../Images/fat.img BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
         COMMAND qemu-system-x86_64
-            -device ahci
-            -boot menu=on
-            -serial stdio
-            -drive if=pflash,format=raw,readonly=on,file=../ovmf_code_4M.fd
-            -drive if=pflash,format=raw,file=../my_vars.fd
-            -drive format=raw,file=../fat.img
+        -drive if=pflash,format=raw,readonly=on,file=../src_boot/ovmf_code_4M.fd
+        -hda ../Images/fat.img
+        -serial stdio
         DEPENDS BOOTX64.EFI
 )
