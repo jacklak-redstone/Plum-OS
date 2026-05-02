@@ -4,6 +4,8 @@
 #include "../libs/std/types.hpp"
 
 extern u64 hddm_offset;
+extern u64 kernel_address_vert;
+extern u64 kernel_address_phys;
 
 namespace Paging {
     alignas(4096) uint64_t PML4[512];
@@ -14,11 +16,16 @@ namespace Paging {
     }
 
     uint64_t alloc_page() {
-        const auto addr = reinterpret_cast<uint64_t>(heap::malloc(4096 + 4095));
+        const auto virt = reinterpret_cast<uint64_t>(heap::malloc(4096 + 4095));
 
-        const uint64_t aligned = (addr + 4095) & ~4095ULL;
+        const uint64_t aligned = (virt + 4095) & ~4095ULL;
 
-        return aligned;
+        // Zero the page — a non-zeroed table has stray Present bits that cause
+        // spurious faults during the page walk.
+        auto *page = reinterpret_cast<uint64_t *>(aligned);
+        for (int i = 0; i < 512; i++) page[i] = 0;
+
+        return aligned - hddm_offset; // page table entries need physical addresses
     }
 
     // TODO
@@ -43,7 +50,7 @@ namespace Paging {
                 uint64_t phys = alloc_page();
                 PDPT[pdpt_i] = phys | Present | Writable | User;
             }
-            auto *PD = reinterpret_cast<uint64_t *>((PDPT[pdpt_i] & ~0xFFFULL) + hddm_offset);
+            auto* PD = reinterpret_cast<uint64_t *>((PDPT[pdpt_i] & ~0xFFFULL) + hddm_offset);
 
             if (!(PD[pd_i] & Present)) {
                 uint64_t phys = alloc_page();
@@ -88,8 +95,7 @@ namespace Paging {
     }
 
     void Enable_paging() {
-        // We only need to update address of PML4 because we enabled it before in elevate.asm
-        auto pml4_addr = reinterpret_cast<uint64_t>(PML4);
-        asm volatile("mov %0, %%cr3" :: "r"(pml4_addr));
+        auto pml4_phys = reinterpret_cast<uint64_t>(PML4) - kernel_address_vert + kernel_address_phys;
+        asm volatile("mov %0, %%cr3" :: "r"(pml4_phys));
     }
 }

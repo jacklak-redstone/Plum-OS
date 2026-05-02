@@ -129,6 +129,10 @@ set(QEMU_FLAGS
         -device virtio-keyboard-pci
         # ----- Debug -----
         -serial stdio
+        -no-reboot
+        -d int,cpu_reset
+        -D ${CMAKE_SOURCE_DIR}/qemu.log
+
         #-d trace:usb_xhci_*
         #-d usb,guest_errors,int
         #-d int # Debug

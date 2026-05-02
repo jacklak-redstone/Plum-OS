@@ -17,7 +17,7 @@ extern "C" u64 user_rcx = 0;
 extern "C" u64 user_r11 = 0;
 
 auto validate_user_ptr = [](const u64 ptr) -> bool {
-    return ptr != 0 && ptr < 0x800000000000ULL;
+    return ptr != 0;
 };
 
 enum class syscall : u64 {

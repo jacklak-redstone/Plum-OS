@@ -30,9 +30,14 @@ setup:
     mov ss, ax ; Set the stack segment to the A-register.
 
     mov rax, cr0
-    and rax, ~((1 << 2) | (1 << 3)) ; Set bit 2 off bc itll cause #UD if using FPU and we wanna actually use the FPU and set bit 3 to off bc u need to idk
-    or rax, (1 << 1) | (1 << 5) ; Monitor co-processor bit, Numeric Error bit?
+    and rax, ~((1 << 2) | (1 << 3)) ; clear EM (no x87 emulation) and TS
+    or rax, (1 << 1) | (1 << 5) ; MP (monitor coprocessor), NE (native FPU errors)
     mov cr0, rax
+
+    ; Enable SSE: OSFXSR (bit 9) allows FXSAVE/SSE, OSXMMEXCPT (bit 10) routes SSE faults to #XM
+    mov rax, cr4
+    or rax, (1 << 9) | (1 << 10)
+    mov cr4, rax
 
     fninit ; load defaults to FPU
     fnstsw [rel testword]

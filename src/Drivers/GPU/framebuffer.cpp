@@ -5,7 +5,6 @@
 #include "../../../UEFI_BOOT/boot_shared.h"
 #include "arch/x86_64/Common/Common.hpp"
 #include "Drivers/vga.h"
-#include "kernel/Paging.hpp"
 #include "kernel/Memory/heap.hpp"
 #include "std/mem_common.hpp"
 
@@ -19,7 +18,6 @@ namespace framebuffer {
 
         front_buffer = static_cast<u32*>(framebuffer.base);
         back_buffer = static_cast<u32*>(heap::malloc(info.size));
-        Paging::Map_memory(reinterpret_cast<u64>(front_buffer), reinterpret_cast<u64>(front_buffer) + info.size, Paging::Profile::VramWC);
 
         clear(BACKGROUND_COLOR);
         height_in_chars = info.height / 16;
@@ -30,7 +28,7 @@ namespace framebuffer {
     }
 
     void framebuffer::swap() {
-        if (!is_dirty)
+        if (!initialized || !is_dirty)
             return;
         mem::memcpy(front_buffer, back_buffer, info.size);
         is_dirty = false;

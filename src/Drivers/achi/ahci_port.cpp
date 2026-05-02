@@ -7,6 +7,8 @@
 #include "std/mem_common.hpp"
 #include "std/printf.hpp"
 
+extern u64 hddm_offset;
+
 namespace drivers::ahci {
     i8 ahci_port::get_command_slot() const {
         const u32 slots = port->sact | port->command_issue;
@@ -55,17 +57,25 @@ namespace drivers::ahci {
 
         stop();
 
+        auto to_phys = [](const void* virt) -> u64 {
+            return reinterpret_cast<u64>(virt) - hddm_offset;
+        };
+
         // Command List
         command_list = static_cast<command_header*>(allocate_virtual_memory(sizeof(command_header) * 32, 1024));
-        port->command_list_base = static_cast<u32>(reinterpret_cast<u64>(command_list));
-        if (bits_is_64)
-            port->command_list_base_upper = static_cast<u32>(reinterpret_cast<u64>(command_list) >> 32);
+        {
+            const u64 phys = to_phys(command_list);
+            port->command_list_base = static_cast<u32>(phys);
+            port->command_list_base_upper = bits_is_64 ? static_cast<u32>(phys >> 32) : 0;
+        }
 
         // Received FIS
         received = static_cast<received_fis*>(allocate_virtual_memory(sizeof(received_fis), 256));
-        port->fis_base_address = static_cast<u32>(reinterpret_cast<u64>(received));
-        if (bits_is_64)
-            port->fis_base_address_upper = static_cast<u32>(reinterpret_cast<u64>(received) >> 32);
+        {
+            const u64 phys = to_phys(received);
+            port->fis_base_address = static_cast<u32>(phys);
+            port->fis_base_address_upper = bits_is_64 ? static_cast<u32>(phys >> 32) : 0;
+        }
 
         for (int i = 0; i < 32; ++i) {
             command_list[i].prd_table_length = 0;
@@ -74,9 +84,9 @@ namespace drivers::ahci {
             command_slots[i].complete = false;
             command_slots[i].error = false;
 
-            command_list[i].cmd_table_base_address = static_cast<u32>(reinterpret_cast<u64>(command_slots[i].table));
-            if (bits_is_64)
-                command_list[i].cmd_table_base_address_upper = static_cast<u32>(reinterpret_cast<u64>(command_slots[i].table) >> 32);
+            const u64 tbl_phys = to_phys(command_slots[i].table);
+            command_list[i].cmd_table_base_address = static_cast<u32>(tbl_phys);
+            command_list[i].cmd_table_base_address_upper = bits_is_64 ? static_cast<u32>(tbl_phys >> 32) : 0;
         }
 
         start();
@@ -96,15 +106,15 @@ namespace drivers::ahci {
     }
 
     void ahci_port::start() const {
-        while (port->command_status & CMD_CR_BIT) {}
+        for (int i = 0; i < 500000 && (port->command_status & CMD_CR_BIT); i++) {}
         port->command_status |= CMD_FRE_BIT | CMD_ST_BIT;
     }
 
     void ahci_port::stop() const {
         port->command_status &= ~CMD_ST_BIT;
-        while (port->command_status & CMD_CR_BIT) {}
+        for (int i = 0; i < 500000 && (port->command_status & CMD_CR_BIT); i++) {}
         port->command_status &= ~CMD_FRE_BIT;
-        while (port->command_status & CMD_FR_BIT) {}
+        for (int i = 0; i < 500000 && (port->command_status & CMD_FR_BIT); i++) {}
     }
 
     void ahci_port::comreset() const {
@@ -135,9 +145,11 @@ namespace drivers::ahci {
 
         const auto table = command_slots[slot].table;
         mem::memset(table, 0, sizeof(command_table));
-        table->prdt[0].data_base_address = static_cast<u32>(reinterpret_cast<u64>(buffer));
-        if (bits_is_64)
-            table->prdt[0].data_base_address_upper = static_cast<u32>(reinterpret_cast<u64>(buffer) >> 32);
+        {
+            const u64 buf_phys = reinterpret_cast<u64>(buffer) - hddm_offset;
+            table->prdt[0].data_base_address = static_cast<u32>(buf_phys);
+            table->prdt[0].data_base_address_upper = bits_is_64 ? static_cast<u32>(buf_phys >> 32) : 0;
+        }
         table->prdt[0].data_byte_count = 512 - 1;
         table->prdt[0].interrupt_on_complete = true;
 
@@ -178,9 +190,9 @@ namespace drivers::ahci {
         // 8K bytes (16 sectors) per PRDT
         for (int i = 0; i < header.prd_table_length - 1; i++)
         {
-            table->prdt[i].data_base_address = static_cast<uint32_t>(reinterpret_cast<u64>(buffer));
-            if (bits_is_64)
-                table->prdt[i].data_base_address_upper = static_cast<uint32_t>(reinterpret_cast<u64>(buffer) >> 32);
+            const u64 buf_phys = reinterpret_cast<u64>(buffer) - hddm_offset;
+            table->prdt[i].data_base_address = static_cast<uint32_t>(buf_phys);
+            table->prdt[i].data_base_address_upper = bits_is_64 ? static_cast<uint32_t>(buf_phys >> 32) : 0;
             table->prdt[i].data_byte_count = 8 * 1024 - 1; // 8K bytes (this value should always be set to 1 less than the actual value)
             table->prdt[i].interrupt_on_complete = true;
             buffer += 4 * 1024;	// 4K words
@@ -188,9 +200,11 @@ namespace drivers::ahci {
         }
 
         // Last entry
-        table->prdt[header.prd_table_length - 1].data_base_address = static_cast<uint32_t>(reinterpret_cast<u64>(buffer));
-        if (bits_is_64)
-            table->prdt[header.prd_table_length - 1].data_base_address_upper = static_cast<uint32_t>(reinterpret_cast<u64>(buffer) >> 32);
+        {
+            const u64 buf_phys = reinterpret_cast<u64>(buffer) - hddm_offset;
+            table->prdt[header.prd_table_length - 1].data_base_address = static_cast<uint32_t>(buf_phys);
+            table->prdt[header.prd_table_length - 1].data_base_address_upper = bits_is_64 ? static_cast<uint32_t>(buf_phys >> 32) : 0;
+        }
         table->prdt[header.prd_table_length - 1].data_byte_count = count * sector_size - 1; // 512 bytes per sector
         table->prdt[header.prd_table_length - 1].interrupt_on_complete = true;
 
@@ -243,9 +257,9 @@ namespace drivers::ahci {
         // 8K bytes (16 sectors) per PRDT
         for (int i = 0; i < header.prd_table_length - 1; i++)
         {
-            table->prdt[i].data_base_address = static_cast<uint32_t>(reinterpret_cast<u64>(buffer));
-            if (bits_is_64)
-                table->prdt[i].data_base_address_upper = static_cast<uint32_t>(reinterpret_cast<u64>(buffer) >> 32);
+            const u64 buf_phys = reinterpret_cast<u64>(buffer) - hddm_offset;
+            table->prdt[i].data_base_address = static_cast<uint32_t>(buf_phys);
+            table->prdt[i].data_base_address_upper = bits_is_64 ? static_cast<uint32_t>(buf_phys >> 32) : 0;
             table->prdt[i].data_byte_count = 8 * 1024 - 1; // 8K bytes (this value should always be set to 1 less than the actual value)
             table->prdt[i].interrupt_on_complete = true;
             buffer += 4 * 1024;	// 4K words
@@ -253,9 +267,11 @@ namespace drivers::ahci {
         }
 
         // Last entry
-        table->prdt[header.prd_table_length - 1].data_base_address = static_cast<uint32_t>(reinterpret_cast<u64>(buffer));
-        if (bits_is_64)
-            table->prdt[header.prd_table_length - 1].data_base_address_upper = static_cast<uint32_t>(reinterpret_cast<u64>(buffer) >> 32);
+        {
+            const u64 buf_phys = reinterpret_cast<u64>(buffer) - hddm_offset;
+            table->prdt[header.prd_table_length - 1].data_base_address = static_cast<uint32_t>(buf_phys);
+            table->prdt[header.prd_table_length - 1].data_base_address_upper = bits_is_64 ? static_cast<uint32_t>(buf_phys >> 32) : 0;
+        }
         table->prdt[header.prd_table_length - 1].data_byte_count = count * sector_size - 1; // 512 bytes per sector
         table->prdt[header.prd_table_length - 1].interrupt_on_complete = true;
 

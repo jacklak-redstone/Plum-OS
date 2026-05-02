@@ -43,7 +43,7 @@ handle_syscall:
     mov r11, [user_r11]    ; restore user RFLAGS
 
     push rax
-    mov ax, 0x33
+    mov ax, 0x2b        ; ring-3 data selector
     mov ds, ax
     mov es, ax
     mov fs, ax

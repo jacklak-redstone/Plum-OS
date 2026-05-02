@@ -41,8 +41,8 @@ enter_user_space:
     mov rsp, rax
     and rsp, ~0xF
     sub rsp, 8
-    ; Segmants
-    mov ax, 0x33
+    ; Segments — 0x2b = ring-3 data (GDT[5] | RPL=3), required for DS/ES/FS/GS
+    mov ax, 0x2b
     mov ds, ax
     mov es, ax
     mov fs, ax

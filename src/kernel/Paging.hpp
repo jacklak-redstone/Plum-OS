@@ -26,9 +26,9 @@ namespace Paging {
     void Enable_paging();
 
     namespace Profile {
-        constexpr uint64_t KernelCode =  Present | Global;
-        constexpr uint64_t KernelData =  Present | Writable | NoExecute | Global;
-        constexpr uint64_t KernelStack = Present | Writable | NoExecute;
+        constexpr uint64_t KernelCode =  Present | User | Global;
+        constexpr uint64_t KernelData =  Present | User | Writable | NoExecute | Global;
+        constexpr uint64_t KernelStack = Present | User | Writable | NoExecute;
         constexpr uint64_t UserCode =    Present | User;
         constexpr uint64_t UserData =    Present | Writable | User | NoExecute;
         constexpr uint64_t MMIO =        Present | Writable | CacheDisable | NoExecute;
