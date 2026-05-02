@@ -5,7 +5,9 @@
 #include "../../../UEFI_BOOT/boot_shared.h"
 #include "arch/x86_64/Common/Common.hpp"
 #include "Drivers/vga.h"
+#include "kernel/Paging.hpp"
 #include "kernel/Memory/heap.hpp"
+#include "kernel/Memory/mem_helper.h"
 #include "std/mem_common.hpp"
 
 namespace framebuffer {
@@ -18,7 +20,12 @@ namespace framebuffer {
 
         front_buffer = static_cast<u32*>(framebuffer.base);
         back_buffer = static_cast<u32*>(heap::malloc(info.size));
-
+        Paging::Map_memory_vp(
+            reinterpret_cast<u64>(framebuffer.base),
+            to_physical(reinterpret_cast<u64>(framebuffer.base)),
+            framebuffer.size,
+            Paging::Profile::VramWC
+        );
         clear(BACKGROUND_COLOR);
         height_in_chars = info.height / 16;
         width_in_chars = info.width / 8;

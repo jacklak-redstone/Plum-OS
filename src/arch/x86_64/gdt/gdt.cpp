@@ -25,10 +25,10 @@ uint64_t gdt[] = {
     gdt_entry(0, 0xFFFFF, ACCESS_PRESENT | ACCESS_RING0 | ACCESS_DATA_SEG | ACCESS_WRITABLE, FLAG_GRANULARITY | FLAG_32BIT), // 0x10
     gdt_entry(0, 0, ACCESS_PRESENT | ACCESS_RING0 | ACCESS_CODE_SEG | ACCESS_READABLE, FLAG_64BIT), // 0x18
     gdt_entry(0, 0, ACCESS_PRESENT | ACCESS_RING0 | ACCESS_DATA_SEG | ACCESS_WRITABLE, FLAG_64BIT), // 0x20
-    gdt_entry(0, 0, ACCESS_PRESENT | ACCESS_RING3 | ACCESS_DATA_SEG | ACCESS_WRITABLE, FLAG_64BIT), // 0x28 ring-3 data (SS after sysret = STAR[63:48]+8)
-    gdt_entry(0, 0, ACCESS_PRESENT | ACCESS_RING3 | ACCESS_CODE_SEG | ACCESS_READABLE, FLAG_64BIT), // 0x30 ring-3 code (CS after sysret = STAR[63:48]+16)
+    gdt_entry(0, 0, ACCESS_PRESENT | ACCESS_RING3 | ACCESS_DATA_SEG | ACCESS_WRITABLE, FLAG_64BIT), // 0x28
+    gdt_entry(0, 0, ACCESS_PRESENT | ACCESS_RING3 | ACCESS_CODE_SEG | ACCESS_READABLE, FLAG_64BIT), // 0x30
     0, // 0x38, TSS low
-    0, // 0x40, TSS high (aka always 0 bc we in low addres space), both filled by asm
+    0, // 0x40, TSS high
 };
 
 gdtd gdt_descriptor = {
@@ -37,7 +37,7 @@ gdtd gdt_descriptor = {
 };
 
 void init_tss() {
-    uint64_t base = reinterpret_cast<uint64_t>(&tss);
+    auto base = reinterpret_cast<uint64_t>(&tss);
     uint16_t limit = sizeof(tss_entry) - 1;
 
     gdt[7] =

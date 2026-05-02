@@ -17,5 +17,5 @@ namespace systemPL {
     extern framebuffer::framebuffer fb;
     extern fs::partition::partition_manager partition_manager;
 
-    void Init(framebuffer::framebuffer_info fb, u64 heap_addr);
+    void Init(framebuffer::framebuffer_info framebuffer_info, u64 heap_addr);
 }

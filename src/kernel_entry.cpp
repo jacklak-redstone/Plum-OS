@@ -1,5 +1,6 @@
 #include "kernel_entry.h"
 
+#include "kernel/linker_info.hpp"
 #include "kernel/system.hpp"
 #include "libs/limine.h"
 
@@ -30,7 +31,7 @@ static volatile limine_kernel_address_request kernel_address_request = {
     .revision = 0
 };
 
-u64 hddm_offset = 0;
+u64 hhdm_offset = 0;
 u64 kernel_address_phys = 0;
 u64 kernel_address_vert = 0;
 
@@ -42,6 +43,11 @@ extern "C" void kernel_main() {
 
     if (fb_request.response == nullptr || fb_request.response->framebuffer_count < 1)
         for(;;) __asm__("hlt");
+
+    asm volatile("mov %0, %%rsp\n"
+        :
+        : "r"(&Linker::stack_top)
+        : "memory");
 
     setup();
 
@@ -71,20 +77,9 @@ extern "C" void kernel_main() {
         for(;;) __asm__("hlt");
 
 
-    hddm_offset = hhdm_request.response->offset;
+    hhdm_offset = hhdm_request.response->offset;
     kernel_address_phys = kernel_address_request.response->physical_base;
     kernel_address_vert = kernel_address_request.response->virtual_base;
 
     systemPL::Init(fb_info, heap_addr);
-
-    volatile uint32_t *fb_ptr = static_cast<volatile uint32_t *>(fb->address);
-    for (size_t y = 0; y < fb->height; y++) {
-        for (size_t x = 0; x < fb->width; x++) {
-            uint32_t nX = x * 255 / fb->width;
-            uint32_t nY = y * 255 / fb->height;
-            fb_ptr[y * (fb->pitch / 4) + x] = (nY << 8) | nX;
-        }
-    }
-
-    for(;;) __asm__("hlt");
 }

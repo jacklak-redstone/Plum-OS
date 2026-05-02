@@ -3,7 +3,7 @@ bits 64
 global setup
 
 extern gdt_descriptor
-extern PML4_Table
+extern stack_top
 
 section .data
 testword: DW 0x55AA
