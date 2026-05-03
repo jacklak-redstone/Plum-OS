@@ -65,6 +65,7 @@ target_link_options(Kernel PRIVATE
         -m64
         -nostdlib
         -no-pie
+        -fuse-ld=lld
         -T ${CMAKE_SOURCE_DIR}/linker.ld
 )
 
@@ -110,7 +111,7 @@ add_custom_target(build
 set(QEMU_FLAGS
         # ----- PC -----
         -cpu max
-        -m 512M
+        -m 1G
         -M q35
         -vga std
         -boot order=c
