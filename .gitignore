@@ -2,5 +2,6 @@
 /build/
 /cmake-build-debug/
 /cmake-build-debug-wsl/
-/isodir/boot/kobylnik_os
 /isodir/boot/kopalnia_os
+/Images/
+/qemu.log
