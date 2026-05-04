@@ -43,4 +43,8 @@ namespace IDT {
     void Install_handler(isr_t handler, uint8_t irq_no);
     void install_uacpi_handler(uacpi_interrupt_handler handler, uint8_t irq_no, uacpi_handle ctx);
     void PIC_Remap(uint8_t offset1, uint8_t offset2);
+
+    extern bool PIC_enabled;
+
+    constexpr uint64_t TIMER_IRQ = 32;
 }

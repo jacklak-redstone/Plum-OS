@@ -43,7 +43,7 @@ namespace Time {
     */
     void Set_PIT(const uint64_t freq) {
         log::info("Setting PIT Frequency to %l...", freq);
-        PIT::timer_set_frequency(freq);
+        PIT::set_aPIC_timer_freq(freq);
         hz = freq;
     }
 }

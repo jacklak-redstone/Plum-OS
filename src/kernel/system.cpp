@@ -18,6 +18,7 @@
 #include "Drivers/ps2/ps2.h"
 #include "Drivers/USB/xHCI/xHCI.hpp"
 #include "Memory/mem_helper.h"
+#include "arch/x86_64/IDT/APIC.hpp"
 
 extern u64 kernel_address_vert;
 extern u64 kernel_address_phys;
@@ -32,8 +33,6 @@ namespace systemPL {
     void Init(framebuffer::framebuffer_info framebuffer_info, u64 heap_addr) {
         init_tss();
         Paging::Init(); // 4KB page size
-        IDT::IDT_Install();
-        Time::Set_PIT(100); // 100Hz
 
         // Heap Initialization
         heap::heap_init(1024*1024*8, heap_addr);
@@ -63,11 +62,15 @@ namespace systemPL {
 
         Paging::Enable_paging();
 
-        x64::set_INT_flag(true); // Enable interrupts
-
         fb.init(framebuffer_info);
 
+        IDT::IDT_Install();
+        x64::set_INT_flag(true); // Enable interrupts
+        Time::Set_PIT(100); // 100Hz
+
         acpi.init();
+
+        IDT::IOAPIC_Init();
 
         log::info("\n");
 

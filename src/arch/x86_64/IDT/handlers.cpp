@@ -7,6 +7,7 @@
 #include "kernel/system.hpp"
 #include "std/printf.hpp"
 #include "std/vector.hpp"
+#include "APIC.hpp"
 
 namespace IDT {
     const char* get_exception_name(const uint64_t int_no) {
@@ -49,7 +50,7 @@ namespace IDT {
             return;
         }
 
-        if (irq_no >= 16) { // PIC IRQ 0–15
+        if (irq_no >= 24) { // PIC IRQ 0–15
             log::error("Install_handler &cERROR&f: &cinvalid &firq &e%u", irq_no);
             return;
         }
@@ -63,6 +64,7 @@ namespace IDT {
 
         if (custom_handlers_count[vector] == 0) {
             log::info("Installed &afirst &7handler for IRQ &a%u", irq_no);
+            ioapic_route_irq(irq_no, irq_no+32, 0);
         } else {
             log::success("&aAdded shared &7handler for IRQ &a%u", irq_no);
         }
@@ -91,13 +93,11 @@ namespace IDT {
         if (regs->int_no == 32) { // Timer
             Time::tick++;
         }
-        // if (regs->int_no == 32+USB::irq_no) {
-        //     std::printf("yes");
-        //     USB::xhci_irq_handler();
-        // }
 
-        if (regs->int_no >= 32 && regs->int_no <= 47) {
-            x64::pic_send_eoi(regs->int_no - 32);
+        if (regs->int_no >= 32) {
+            write_apic(0xB0, 0);
+            if (PIC_enabled)
+                x64::pic_send_eoi(regs->int_no - 32);
         }
     }
 }
