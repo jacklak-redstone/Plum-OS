@@ -15,6 +15,7 @@
 #include "Drivers/achi/ahci_device.h"
 #include "Drivers/fs/partition/partition_manager.h"
 #include "Drivers/GPU/framebuffer.hpp"
+#include "Drivers/ps2/ps2.h"
 #include "Drivers/USB/xHCI/xHCI.hpp"
 #include "Memory/mem_helper.h"
 
@@ -26,6 +27,7 @@ namespace systemPL {
     drivers::ahci::ahci ahci;
     framebuffer::framebuffer fb;
     fs::partition::partition_manager partition_manager;
+    drivers::acpi::acpi acpi;
 
     void Init(framebuffer::framebuffer_info framebuffer_info, u64 heap_addr) {
         init_tss();
@@ -59,20 +61,23 @@ namespace systemPL {
             }
         }
 
-        kb::flush_keyboard();
-
         Paging::Enable_paging();
 
         x64::set_INT_flag(true); // Enable interrupts
 
         fb.init(framebuffer_info);
 
-        fb.swap();
+        acpi.init();
+
+        log::info("\n");
 
         USB::m_xhci_driver.init_device();
         USB::m_xhci_driver.start_device();
 
-        fb.swap();
+        drivers::ps2::init(acpi);
+        acpi.enumerate_bus();
+
+        log::info("\n");
 
         ahci.init();
         for (int i = 0; i < 32; ++i) {
@@ -108,8 +113,6 @@ namespace systemPL {
         partition_manager.init(device);
 
         fb.swap();
-
-        drivers::acpi::init();
 
         enter_user_space();
     }

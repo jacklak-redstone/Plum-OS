@@ -36,10 +36,4 @@ namespace kb {
     char to_char(key_code code) {
         return ascii_map[static_cast<uint8_t>(code)];
     }
-
-    void flush_keyboard() {
-        // Read and discard all pending bytes in PS/2 output buffer
-        while (x64::inb(0x64) & 0x01)
-            x64::inb(0x60);
-    }
 }
