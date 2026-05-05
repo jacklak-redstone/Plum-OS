@@ -15,10 +15,12 @@ namespace PIT {
         }
         const uint32_t divisor = 1193182 / hz;
 
+        x64::set_INT_flag(false);
         x64::outb(0x43, 0x36);
 
         x64::outb(0x40, static_cast<uint8_t>(divisor & 0xFF)); // Low byte
         x64::outb(0x40, static_cast<uint8_t>((divisor >> 8) & 0xFF)); // High byte
+        x64::set_INT_flag(true);
     }
 
     void set_aPIC_timer_freq(uint32_t hz) {
@@ -36,7 +38,9 @@ namespace PIT {
             hz = ticks_per_ms;
         }
 
+        x64::set_INT_flag(false);
         IDT::write_apic(0x380, ticks_per_sec / hz);
+        x64::set_INT_flag(true);
         log::success("[ aPIC ] Setting timer to %uhz (initial count: %u)", hz, ticks_per_sec / hz);
     }
 
