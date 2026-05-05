@@ -2,6 +2,8 @@
 #include "arch/x86_64/Common/Common.hpp"
 #include "APIC.hpp"
 #include "PIT.hpp"
+#include "kernel/log.h"
+#include "kernel/system.hpp"
 
 namespace IDT {
     bool PIC_enabled = false;
@@ -31,6 +33,7 @@ namespace IDT {
 
         PIC_Remap(0x20, 0x28); // 0x20 Master 0x28 Slave
         PIC_enabled = true;
+        x64::set_INT_flag(true); // Enable interrupts
         x64::set_INT_flag(true);
         aPIC_Init();
         PIT::calibrate_aPIC_timer();

@@ -68,11 +68,11 @@ inline void sys_PCI_TEST() {
         : "rcx", "r11", "memory");
 }
 
-inline void sys_heap_dump() {
+inline void sys_heap_dump(bool show_all) {
     u64 ret;
     asm volatile("syscall"
         : "=a"(ret)
-        : "a"(8ULL)
+        : "a"(8ULL), "D"(static_cast<u64>(show_all))
         : "rcx", "r11", "memory");
 }
 

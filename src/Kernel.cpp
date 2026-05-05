@@ -14,24 +14,24 @@
 struct Command {
     const char *name;
 
-    void (*func)();
+    void (*func)(int argc, char** argv);
 };
 
 inline uint64_t range(void *a, void *b) {
     return reinterpret_cast<uint64_t>(b) - reinterpret_cast<uint64_t>(a);
 }
 
-void list_commands();
+void list_commands(int argc, char** argv);
 
 Command commands[10] = {
     {"help", list_commands},
     {
-        "clear", [] {
+        "clear", [](int argc, char** argv) {
             drivers::vga::clear(Color::Black);
         }
     },
     {
-        "poweroff", [] {
+        "poweroff", [](int argc, char** argv) {
             std::printf("&c\tShutting down in 5s (press ENTER to cancel!)\n");
             if (!Time::WaitForKey(5000, kb::key_code::KEY_ENTER)) {
                 asm volatile("outw %0, %1" : : "a"(static_cast<uint16_t>(0x2000)), "Nd"(static_cast<uint16_t>(0x604)));
@@ -43,23 +43,40 @@ Command commands[10] = {
         }
     },
     {
-        "sleep", [] {
+        "sleep", [](int argc, char** argv) {
             std::printf("&a\tSleeping for &f5 &aseconds\n");
             sys_sleep(5000);
         }
     },
     {
-        "heap", [] {
-            sys_heap_dump();
+        "heap", [](int argc, char** argv) {
+            bool show_all = false;
+            if (argc > 0) {
+                for (int i = 0; i < argc; i++) {
+                    if (std::str_cmp(argv[i], "-s")) {
+                        show_all = false;
+                    } else if (std::str_cmp(argv[i], "-l")) {
+                        show_all = true;
+                    } else if (std::str_cmp(argv[i], "-h")) {
+                        std::printf("&7Usage: &fheap &e[OPTIONS]\n\n");
+                        std::printf("&eOption     &fMeaning\n");
+                        std::printf("&b-l         &7Show all information about heap\n");
+                        std::printf("&b-s         &7Show only summary\n");
+                        std::printf("&b-h         &7This text\n");
+                        return;
+                    }
+                }
+            }
+            sys_heap_dump(show_all);
         }
     },
     {
-        "pci", [] {
+        "pci", [](int argc, char** argv) {
             sys_PCI_TEST();
         }
     },
     {
-        "size", [] {
+        "size", [](int argc, char** argv) {
             auto kernel_size = range(&Linker::__kernel_start, &Linker::__kernel_end);
             auto text_size = range(&Linker::__kernel_text_start, &Linker::__kernel_text_end);
             auto rodata_size = range(&Linker::__kernel_rodata_start, &Linker::__kernel_rodata_end);
@@ -83,17 +100,17 @@ Command commands[10] = {
         }
     },
     {
-        "usb", [] {
+        "usb", [](int argc, char** argv) {
         }
     },
     {
-        "colors", [] {
+        "colors", [](int argc, char** argv) {
             std::printf(
                 "&0 &&00 &1 &&11 &2 &&22 &3 &&33 &4 &&44 &5 &&55 &6 &&66 &7 &&77 &8 &&88 &9 &&99 &a &&aa &b &&bb &c &&cc &d &&dd &e &&ee &f &&ff\n");
         }
     },
     {
-        "partitions", [] {
+        "partitions", [](int argc, char** argv) {
             sys_list_parts();
         }
     },
@@ -103,7 +120,7 @@ struct TextCommand {
     char buffer[256];
 };
 
-void list_commands() {
+void list_commands(int argc, char** argv) {
     std::printf("&9\tCommands: &9%s", std::Output::std_out, commands[0].name);
     for (i32 i = 1; i < sizeof(commands) / sizeof(Command); ++i) {
         std::printf("&9, %s", std::Output::std_out, commands[i].name);
@@ -119,7 +136,7 @@ extern "C" void user_space_main() {
     std::printf("&f------------ &bPlum OS 64bit &f------------\n\n");
     std::printf("&aHello from user space!\n");
 
-    list_commands();
+    list_commands(0, nullptr);
 
     std::printf("&fPlum-OS> ");
 
@@ -143,10 +160,51 @@ extern "C" void user_space_main() {
             buffer[i] = '\0';
             std::put_char('\n');
 
+            // Get Command Name from buffer
+            char command_name[256] = {0};
+            int k = 0;
+            int j = 0;
+
+            while (buffer[k] != '\0' && buffer[k] == ' ')
+                k++;
+
+            while (buffer[k] != '\0' && buffer[k] != ' ' && j < 255) {
+                command_name[j++] = buffer[k++];
+            }
+
+            command_name[j] = '\0';
+
+            // Get arguments from buffer
+            char* args[32];
+            int argc = 0;
+            k = 0;
+
+            while (buffer[k] != '\0') {
+                while (buffer[k] == ' ') k++;
+
+                if (buffer[k] == '\0') break;
+
+                args[argc++] = &buffer[k];
+
+                while (buffer[k] != '\0' && buffer[k] != ' ')
+                    k++;
+            }
+
+            k = 0;
+            while (buffer[k] != '\0') {
+                if (buffer[k] != ' ') {
+                    k++;
+                } else {
+                    buffer[k] = '\0';
+                    k++;
+                    while (buffer[k] == ' ') k++;
+                }
+            }
+
             bool found_command = false;
             for (auto &[name, func] : commands) {
-                if (std::str_cmp(buffer, name)) {
-                    func();
+                if (std::str_cmp(command_name, name)) {
+                    func(argc, args);
                     found_command = true;
                     break;
                 }

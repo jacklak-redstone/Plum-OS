@@ -71,7 +71,7 @@ extern "C" u64 dispatch_syscall(u64 id, u64 arg1, u64 arg2, u64 arg3) {
             PCI::Test();
             return 0;
         case syscall::heap:
-            heap::dump_heap();
+            heap::dump_heap(arg1);
             return 0;
         case syscall::swap_framebuffer:
             systemPL::fb.swap();

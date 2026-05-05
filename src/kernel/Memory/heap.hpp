@@ -32,7 +32,7 @@ namespace heap {
 	uint64_t check_used_heap();
 	uint64_t check_heap();
 
-	void dump_heap();
+	void dump_heap(bool show_all);
 }
 
 

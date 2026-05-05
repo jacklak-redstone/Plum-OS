@@ -174,6 +174,7 @@ namespace drivers::ps2 {
 
         uacpi_free_resources(kb_res);
         x64::set_INT_flag(true);
+        x64::inb(DATA_PORT);
         return UACPI_STATUS_OK;
     }
 

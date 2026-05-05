@@ -144,7 +144,7 @@ set(QEMU_FLAGS
 
         #-d trace:usb_xhci_*
         #-d usb,guest_errors,int
-        #-d int # Debug
+        -d int,cpu_reset # Debug
         #-trace usb_xhci_*
         -s
 )

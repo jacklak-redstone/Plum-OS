@@ -67,7 +67,6 @@ namespace systemPL {
         fb.init(framebuffer_info);
 
         IDT::IDT_Install();
-        x64::set_INT_flag(true); // Enable interrupts
         Time::Set_PIT(100); // 100Hz
 
         uint8_t acpi_early_buf[4096];

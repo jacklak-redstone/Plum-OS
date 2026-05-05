@@ -184,22 +184,28 @@ namespace heap {
         return free_bytes;
     }
 
-    void dump_heap() {
+    void dump_heap(const bool show_all) {
+        if (show_all) {
+            uint32_t b_count = 0;
+            int limit = 10000;
+            std::kernel::printf("&bHeap Visualization\n");
+
+            for (Block* b = heap_head; b && limit--; b = b->next) {
+                b_count += 1;
+                std::kernel::printf("&f\tBlock #&a%u &f@ &7%x ", b_count, reinterpret_cast<uint64_t>(b+1)); // +1 to show real data address
+
+                auto size = static_cast<double>(b->size);
+                const char *post_fix = std::format_size(size);
+                std::kernel::printf("&fsize: &a%f&f%s ", size, post_fix);
+                if (b->free)
+                    std::kernel::printf("&afree\n");
+                else
+                    std::kernel::printf("&cused\n");
+            }
+        }
         uint32_t b_count = 0;
-        int limit = 10000;
-        std::kernel::printf("&bHeap Visualization\n");
-
-        for (Block* b = heap_head; b && limit--; b = b->next) {
+        for (Block* b = heap_head; b; b = b->next) {
             b_count += 1;
-            std::kernel::printf("&f\tBlock #&a%u &f@ &7%x ", b_count, reinterpret_cast<uint64_t>(b+1)); // +1 to show real data address
-
-            auto size = static_cast<double>(b->size);
-            const char *post_fix = std::format_size(size);
-            std::kernel::printf("&fsize: &a%f&f%s ", size, post_fix);
-            if (b->free)
-                std::kernel::printf("&afree\n");
-            else
-                std::kernel::printf("&cused\n");
         }
 
         std::kernel::printf("&f\tBlock total: &a%u\n", b_count);
