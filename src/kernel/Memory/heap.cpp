@@ -1,4 +1,6 @@
 #include "heap.hpp"
+
+#include "kernel/Sleep.hpp"
 #include "std/printf.hpp"
 #include "std/string.h"
 
@@ -185,38 +187,49 @@ namespace heap {
     }
 
     void dump_heap(const bool show_all) {
-        if (show_all) {
-            uint32_t b_count = 0;
-            int limit = 10000;
-            std::kernel::printf("&bHeap Visualization\n");
+        uint64_t start = Time::tick;
+        uint64_t used = 0;
+        uint64_t free = 0;
+        uint64_t all = 0;
+        uint64_t b_count = 0;
 
-            for (Block* b = heap_head; b && limit--; b = b->next) {
-                b_count += 1;
-                std::kernel::printf("&f\tBlock #&a%u &f@ &7%x ", b_count, reinterpret_cast<uint64_t>(b+1)); // +1 to show real data address
+        std::kernel::printf("&bHeap Visualization\n");
 
-                auto size = static_cast<double>(b->size);
-                const char *post_fix = std::format_size(size);
-                std::kernel::printf("&fsize: &a%f&f%s ", size, post_fix);
-                if (b->free)
-                    std::kernel::printf("&afree\n");
-                else
-                    std::kernel::printf("&cused\n");
-            }
-        }
-        uint32_t b_count = 0;
         for (Block* b = heap_head; b; b = b->next) {
+            uint64_t m_size = b->size;
+            all += m_size;
+            if (b->free)
+                free += m_size;
+            else
+                used += m_size;
+
             b_count += 1;
+
+            if (show_all) {
+                auto size = static_cast<double>(m_size);
+                const char *post_fix = std::format_size(size);
+                std::kernel::printf("&f\tBlock #&a%u &f@ &7%x &fsize: &a%f&f%s ", b_count, reinterpret_cast<uint64_t>(b+1), size, post_fix);
+
+                if (b->free)
+                    std::kernel::printf("&afree");
+                else
+                    std::kernel::printf("&cused");
+            }
         }
 
         std::kernel::printf("&f\tBlock total: &a%u\n", b_count);
         std::kernel::printf("&fSummary (&cused / &afree / &ball&f): ");
 
-        auto used_s = static_cast<double>(check_used_heap());
+        auto used_s = static_cast<double>(used);
         const char *used_p = std::format_size(used_s);
-        auto free_s = static_cast<double>(check_free_heap());
+        auto free_s = static_cast<double>(free);
         const char *free_p = std::format_size(free_s);
-        auto all_s = static_cast<double>(check_heap());
+        auto all_s = static_cast<double>(all);
         const char *all_p = std::format_size(all_s);
         std::kernel::printf("&c%f&f%s / &a%f&f%s / &b%f&f%s\n\n", used_s, used_p, free_s, free_p, all_s, all_p);
+        uint64_t end = Time::tick;
+        uint64_t elapsed_ticks = end - start;
+        uint64_t ms = elapsed_ticks * 10;
+        std::kernel::printf("Took %lms\n\n", ms);
     }
 }

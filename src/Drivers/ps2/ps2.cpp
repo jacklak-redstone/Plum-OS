@@ -174,7 +174,9 @@ namespace drivers::ps2 {
 
         uacpi_free_resources(kb_res);
         x64::set_INT_flag(true);
-        x64::inb(DATA_PORT);
+        log::info("[ PS2 ] Flushing buffers...");
+        while (read_status().output_buffer_status == true)
+            x64::inb(OUTPUT_PORT);
         return UACPI_STATUS_OK;
     }
 

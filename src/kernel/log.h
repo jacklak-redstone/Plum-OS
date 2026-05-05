@@ -3,7 +3,7 @@
 #include "std/string.h"
 
 namespace log {
-    constexpr u32 MAX_LOG_LEVEL = 3; // 0 = error, 1 = warnings and above, 2 = success and above, 3 = info and above
+    constexpr u32 MAX_LOG_LEVEL = 2; // 0 = error, 1 = warnings and above, 2 = success and above, 3 = info and above
 
     template<typename... Args>
     void error(const char* text, Args&&... args) {

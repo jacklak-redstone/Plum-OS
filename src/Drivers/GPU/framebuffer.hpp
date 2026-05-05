@@ -19,13 +19,13 @@ namespace framebuffer {
         void init(framebuffer_info framebuffer);
 
         void swap();
-        void clear(u32 color);
+        void clear(u32 color = 0x0F0F0F);
         void set_pixel(u32 x, u32 y, u32 color) const;
 
         void put_char_at(char c, u32 x, u32 y, u32 color);
         void put_char(char c, u32 color);
 
-        void scroll();
+        void scroll(u32 lines = 1);
     private:
         void inc_cursor(const i32 amount) {
             cursor_x += amount;

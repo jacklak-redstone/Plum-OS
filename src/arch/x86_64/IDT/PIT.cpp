@@ -49,9 +49,11 @@ namespace PIT {
         IDT::write_apic(0x320, 1 << 16); // Mask timer (no interrupts)
         IDT::write_apic(0x380, 0xFFFFFFFF);
 
+        x64::set_INT_flag(true);
         constexpr uint32_t target = 5 * scale; // ~50 ms
         Time::tick = 0;
         while (Time::tick < target) {}
+        x64::set_INT_flag(false);
 
         uint32_t lapic_elapsed = 0xFFFFFFFF - IDT::read_apic(0x390);
         uint32_t ms = target * 10;
@@ -63,6 +65,7 @@ namespace PIT {
         }
 
         uint32_t initial = (ticks_per_ms * 1000) / 100;
+
 
         IDT::write_apic(0x320, 32 | (1 << 17)); // periodic
         IDT::write_apic(0x380, initial);

@@ -27,7 +27,7 @@ Command commands[10] = {
     {"help", list_commands},
     {
         "clear", [](int argc, char** argv) {
-            drivers::vga::clear(Color::Black);
+            systemPL::fb.clear();
         }
     },
     {

@@ -4,6 +4,7 @@
 #include "glyphs.h"
 #include "arch/x86_64/Common/Common.hpp"
 #include "Drivers/vga.h"
+#include "kernel/log.h"
 #include "kernel/Paging.hpp"
 #include "kernel/Memory/heap.hpp"
 #include "kernel/Memory/mem_helper.h"
@@ -100,13 +101,35 @@ namespace framebuffer {
         inc_cursor(1);
     }
 
-    void framebuffer::scroll() {
-        if (!initialized)
+    void framebuffer::scroll(u32 lines) {
+        if (!initialized) {
+            log::error("[ FB ] Tried to scrool with uninitialized framebuffer");
             return;
+        }
+        if (lines == 0) {
+            log::error("[ FB ] Tried to scroll 0 lines");
+            return;
+        }
+
+        constexpr uint32_t px_per_line = 16;
+        uint32_t scroll_px = lines * px_per_line;
+
+        if (scroll_px >= info.height) {
+            clear(BACKGROUND_COLOR);
+            return;
+        }
+
         const bool old_flag = x64::get_INT_flag();
         x64::set_INT_flag(false);
-        mem::memcpy(back_buffer, back_buffer + (16 * info.pixels_in_scanline), (info.height - 16) * info.pixels_in_scanline * sizeof(u32) );
-        mem::memset32(back_buffer + ((info.height - 16) * info.pixels_in_scanline), BACKGROUND_COLOR, 16 * info.pixels_in_scanline);
+
+        const uint32_t pitch = info.pixels_in_scanline;
+
+        mem::memcpy(back_buffer,back_buffer + scroll_px * pitch,(info.height - scroll_px) * pitch * sizeof(u32));
+        mem::memset32(back_buffer + (info.height - scroll_px) * pitch,BACKGROUND_COLOR,scroll_px * pitch);
+
+        //mem::memcpy(back_buffer, back_buffer + (16 * info.pixels_in_scanline), (info.height - 16) * info.pixels_in_scanline * sizeof(u32) );
+        //mem::memset32(back_buffer + ((info.height - 16) * info.pixels_in_scanline), BACKGROUND_COLOR, 16 * info.pixels_in_scanline);
+
         is_dirty = true;
         x64::set_INT_flag(old_flag);
     }
