@@ -22,6 +22,7 @@ namespace IDT {
     }
 
     void IDT_Install() {
+        x64::set_INT_flag(false);
         for (uint32_t i = 0; i < 256; i++) {
             set_IDT_entry(idt[i], isr_table[i]);
         }
