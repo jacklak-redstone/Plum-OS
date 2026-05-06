@@ -29,19 +29,22 @@ void uacpi_kernel_unmap(void *addr, uacpi_size len) {
 }
 
 void uacpi_kernel_log(uacpi_log_level level, const uacpi_char* msg) {
+    char message[256];
+    const auto len = std::strcpy(message, msg);
+    message[len - 1] = '\0';
     switch (level) {
         case UACPI_LOG_ERROR:
-            std::kernel::printf("&4[E] [ uACPI ] %s", msg);
+            log::error("[ uACPI ] %s", message);
             break;
         case UACPI_LOG_WARN:
-            std::kernel::printf("&e[W] [ uACPI ] %s", msg);
+            log::warn("[ uACPI ] %s", message);
             break;
         case UACPI_LOG_INFO:
-            std::kernel::printf("&7[I] [ uACPI ] %s", msg);
+            log::info("[ uACPI ] %s", message);
             break;
         case UACPI_LOG_DEBUG:
         case UACPI_LOG_TRACE:
-            std::kernel::printf("&2[D] [ uACPI ] %s", msg);
+            log::info("[ uACPI ] %s", message);
             break;
     }
 }
