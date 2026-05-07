@@ -17,7 +17,7 @@ namespace x64 {
             :
             : "memory"
         );
-        return !((rflags & (1 << 9)) != 0); // bit 9
+        return (rflags & (1 << 9)) != 0; // bit 9
     }
 
     void pic_send_eoi(const uint8_t irq) {

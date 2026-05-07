@@ -4,6 +4,7 @@
 #include "log.h"
 #include "arch/x86_64/IDT/PIT.hpp"
 #include "Drivers/Keyboard.hpp"
+#include "Drivers/hpet/hpet.h"
 
 namespace Time {
     uint64_t hz;
@@ -14,6 +15,9 @@ namespace Time {
      10ms accuracy  (means 4ms is technically still 0ms)
     */
     void Sleep(const uint64_t t) {
+        hpet::sleep_ms(t);
+        return;
+
         const uint64_t end = tick + ((t * hz) / 1000);
 
         while (tick < end) {

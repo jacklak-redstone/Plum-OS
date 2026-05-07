@@ -91,8 +91,6 @@ namespace IDT {
     }
 
     void IOAPIC::route(const u8 gsi, u8 vector, DeliveryMode delivery_mode, TriggerMode trigger_mode, bool active_low, bool masked) const {
-        //log::info("[ IOAPIC ] Routing: gsi=%u vector=%u trigger=%u polarity=%u masked=%u",
-        //      gsi, vector, static_cast<u32>(trigger_mode), static_cast<u32>(active_low), static_cast<u32>(masked));
         const u8 index = gsi - global_intr_base;
 
         redirection_entry entry {};
