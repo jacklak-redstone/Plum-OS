@@ -46,19 +46,20 @@ Command commands[10] = {
         "sleep", [](int argc, char** argv) {
             uint64_t wait = 1;
             uint8_t unit = true; // ms, s
+            bool us = false;
             if (argc > 1) {
                 for (int i = 1; i < argc; i++) {
                     if (std::str_cmp(argv[i], "-h")) {
                         std::printf("&7Usage: &fsleep &e[OPTIONS]\n\n");
                         std::printf("&eOption     &fMeaning\n");
-                        std::printf("&b-ns        &Nano-seconds mode\n");
+                        std::printf("&b-us        &7Micro-seconds mode\n");
                         std::printf("&b-ms        &7Mili-seconds mode\n");
                         std::printf("&b-s         &7Seconds mode\n");
                         std::printf("&b-t TIME    &7Time to wait\n");
                         std::printf("&b-h         &7This text\n");
                         return;
-                    } else if (std::str_cmp(argv[i], "-ns")) {
-                        std::printf("&c Fr no nano-seconds\n");
+                    } else if (std::str_cmp(argv[i], "-us")) {
+                        us = true;
                         unit = false;
                     } else if (std::str_cmp(argv[i], "-ms")) {
                         unit = false;
@@ -72,8 +73,14 @@ Command commands[10] = {
                 }
             }
             std::printf("&a\tSleeping for &f%l ", std::Output::std_out, wait);
-            std::printf("&a%s\n", std::Output::std_out, unit ? "seconds" : "mili-seconds");
-            sys_sleep(unit ? wait*1000 : wait);
+            auto unit_str = unit ? "seconds" : "mili-seconds";
+            if (us)
+                unit_str = "micro-seconds";
+            std::printf("&a%s\n", std::Output::std_out, unit_str);
+            auto time = unit ? wait * 1000000 : wait * 1000;
+            if (us)
+                time = wait;
+            sys_sleep(time);
         }
     },
     {
