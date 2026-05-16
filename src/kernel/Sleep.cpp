@@ -16,13 +16,6 @@ namespace Time {
     */
     void Sleep(const uint64_t t) {
         hpet::sleep_ms(t);
-        return;
-
-        const uint64_t end = tick + ((t * hz) / 1000);
-
-        while (tick < end) {
-            x64::halt();
-        }
     }
 
     /*

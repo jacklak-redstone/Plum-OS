@@ -50,6 +50,10 @@ inline void* operator new(size_t, void* ptr) noexcept {
 
 inline void operator delete(void*, void*) noexcept {}
 
+inline void operator delete(void* ptr, size_t size) noexcept {
+	(void)ptr;
+}
+
 inline void* operator new[](const size_t size) {
 	return heap::malloc(size);
 }
