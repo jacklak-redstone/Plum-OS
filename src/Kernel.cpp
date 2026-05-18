@@ -10,6 +10,7 @@
 #include "Drivers/vga.h"
 #include "std/string.h"
 #include "kernel/linker_info.hpp"
+#include "User_Programs/Chess/main.hpp"
 
 struct Command {
     const char *name;
@@ -23,11 +24,15 @@ inline uint64_t range(void *a, void *b) {
 
 void list_commands(int argc, char** argv);
 
-Command commands[10] = {
+Command commands[11] = {
     {"help", list_commands},
     {
         "clear", [](int argc, char** argv) {
             systemPL::fb.clear();
+        }
+    }, {
+        "chess", [](int argc, char** argv) {
+            Chess::main();
         }
     },
     {

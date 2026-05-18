@@ -130,4 +130,20 @@ namespace NET {
         uint8_t code;
         uint16_t checksum;
     } __attribute__((packed));
+
+    struct ICMPPacket {
+        uint8_t type;
+        uint8_t code;
+        uint16_t checksum;
+        uint16_t id;
+        uint16_t seq;
+        uint8_t data[32];
+    } __attribute__((packed));
+
+    struct UDPHeader {
+        uint16_t src_port;
+        uint16_t dst_port;
+        uint16_t length;
+        uint16_t checksum;
+    } __attribute__((packed));
 }

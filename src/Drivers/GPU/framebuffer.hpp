@@ -4,6 +4,11 @@
 struct Framebuffer;
 
 namespace framebuffer {
+    struct screen_info {
+        u32 width;
+        u32 height;
+    };
+
     struct framebuffer_info {
         void* base;
         u32 width;
@@ -21,6 +26,7 @@ namespace framebuffer {
         void swap();
         void clear(u32 color = 0x0F0F0F);
         void set_pixel(u32 x, u32 y, u32 color) const;
+        void set_dirty() { is_dirty = true; }
 
         void put_char_at(char c, u32 x, u32 y, u32 color);
         void put_char(char c, u32 color);
@@ -28,6 +34,7 @@ namespace framebuffer {
         void scroll(u32 lines = 1);
 
         i32 get_height_in_chars() const { return height_in_chars; }
+        screen_info get_screen_info() const { return {info.width, info.height}; }
     private:
         void inc_cursor(const i32 amount) {
             cursor_x += amount;

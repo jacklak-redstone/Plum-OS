@@ -1,4 +1,6 @@
 #include "IPv4.hpp"
+
+#include "UDP.hpp"
 #include "Drivers/Network/Common.hpp"
 #include "Drivers/Network/Net_Device.hpp"
 #include "Drivers/Network/IPv4/ICMP.hpp"
@@ -14,6 +16,7 @@ namespace NET {
                 return;
             }
             case IPv4_Protocol_UDP: {
+                receive_udp(packet);
                 return;
             }
             default:

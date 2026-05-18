@@ -10,6 +10,7 @@
 #include "Drivers/hpet/hpet.h"
 #include "kernel/system.hpp"
 #include "kernel/Memory/heap.hpp"
+#include "Drivers/GPU/Render.hpp"
 
 extern "C" u64 user_rsp = 0;
 
@@ -32,6 +33,7 @@ enum class syscall : u64 {
     heap = 8,
     swap_framebuffer = 9,
     list_partitions = 10,
+    draw_rectangle = 20,
 };
 
 extern "C" u64 dispatch_syscall(u64 id, u64 arg1, u64 arg2, u64 arg3) {
@@ -81,6 +83,8 @@ extern "C" u64 dispatch_syscall(u64 id, u64 arg1, u64 arg2, u64 arg3) {
         case syscall::list_partitions:
             systemPL::partition_manager.list_partitions();
             return 0;
+        case syscall::draw_rectangle:
+            renderer::rectangle(reinterpret_cast<glm::vec2 *>(arg1), reinterpret_cast<glm::vec2 *>(arg2), arg3);
         default:
             return static_cast<u64>(-1); // ENOSYS
     }

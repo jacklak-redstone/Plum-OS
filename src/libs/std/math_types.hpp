@@ -62,6 +62,67 @@ namespace glm {
         }
     };
 
+    struct ivec2 {
+        union {
+            struct { int x, y; };
+            struct { int r, g; };
+        };
+
+        ivec2() = default;
+        ivec2(const int x, const int y) : x(x), y(y) {}
+        explicit ivec2(const int a) : x(a), y(a) {}
+
+        ivec2& operator+=(const ivec2& other) {
+            x += other.x;
+            y += other.y;
+            return *this;
+        }
+        ivec2& operator-=(const ivec2& other) {
+            x -= other.x;
+            y -= other.y;
+            return *this;
+        }
+        ivec2& operator*=(const ivec2& other) {
+            x *= other.x;
+            y *= other.y;
+            return *this;
+        }
+        ivec2& operator/=(const ivec2& other) {
+            x /= other.x;
+            y /= other.y;
+            return *this;
+        }
+        friend ivec2 operator+(const ivec2& l, const ivec2& r) {
+            ivec2 result = l;
+            result += r;
+            return result;
+        }
+        friend ivec2 operator-(const ivec2& l, const ivec2& r) {
+            ivec2 result = l;
+            result -= r;
+            return result;
+        }
+        friend ivec2 operator*(const ivec2& l, const ivec2& r) {
+            ivec2 result = l;
+            result *= r;
+            return result;
+        }
+        friend ivec2 operator/(const ivec2& l, const ivec2& r) {
+            ivec2 result = l;
+            result /= r;
+            return result;
+        }
+        friend bool operator==(const ivec2& l, const ivec2& r) {
+            return (l.x == r.x) && (l.y == r.y);
+        }
+        int& operator[](const int index) {
+            return (&x)[index];
+        }
+        const int &operator[](const int index) const {
+            return (&x)[index];
+        }
+    };
+
     struct vec3 {
         union {
             struct { float x, y, z; };

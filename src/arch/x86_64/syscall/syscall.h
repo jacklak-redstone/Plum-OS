@@ -1,5 +1,6 @@
 #pragma once
 #include "Drivers/Keyboard.hpp"
+#include "std/math_types.hpp"
 #include "std/types.hpp"
 
 inline u64 sys_write(const char* str, u64 color) {
@@ -90,4 +91,17 @@ inline void sys_list_parts() {
         : "=a"(ret)
         : "a"(10ULL)
         : "rcx", "r11", "memory");
+}
+
+inline void sys_draw_rectangle(glm::vec2 *pos1, glm::vec2 *size, uint32_t color) {
+    u64 ret;
+    asm volatile(
+        "syscall"
+        : "=a"(ret)
+        : "a"(20ULL),
+          "D"(pos1),
+          "S"(size),
+          "d"(color)
+        : "rcx", "r11", "memory"
+    );
 }
