@@ -101,7 +101,7 @@ namespace framebuffer {
         inc_cursor(1);
     }
 
-    void framebuffer::scroll(u32 lines) {
+    void framebuffer::scroll(const u32 lines) {
         if (!initialized) {
             log::error("[ FB ] Tried to scrool with uninitialized framebuffer");
             return;
@@ -126,9 +126,6 @@ namespace framebuffer {
 
         mem::memcpy(back_buffer,back_buffer + scroll_px * pitch,(info.height - scroll_px) * pitch * sizeof(u32));
         mem::memset32(back_buffer + (info.height - scroll_px) * pitch,BACKGROUND_COLOR,scroll_px * pitch);
-
-        //mem::memcpy(back_buffer, back_buffer + (16 * info.pixels_in_scanline), (info.height - 16) * info.pixels_in_scanline * sizeof(u32) );
-        //mem::memset32(back_buffer + ((info.height - 16) * info.pixels_in_scanline), BACKGROUND_COLOR, 16 * info.pixels_in_scanline);
 
         is_dirty = true;
         x64::set_INT_flag(old_flag);

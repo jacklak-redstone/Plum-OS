@@ -32,7 +32,7 @@ Command commands[11] = {
         }
     }, {
         "chess", [](int argc, char** argv) {
-            Chess::main();
+            Chess::main(argc, argv);
         }
     },
     {

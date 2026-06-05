@@ -1,5 +1,5 @@
 #pragma once
 
 namespace Chess {
-    void main();
+    void main(int argc, char** argv);
 }

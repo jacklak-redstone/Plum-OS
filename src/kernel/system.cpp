@@ -6,8 +6,6 @@
 #include "log.h"
 #include "kernel/Memory/heap.hpp"
 #include "arch/x86_64/IDT/IDT.hpp"
-#include "arch/x86_64/Common/Common.hpp"
-#include "Drivers/Keyboard.hpp"
 #include "kernel/Sleep.hpp"
 #include "kernel/Paging.hpp"
 #include "arch/x86_64/gdt/gdt.h"
@@ -19,10 +17,9 @@
 #include "Drivers/USB/xHCI/xHCI.hpp"
 #include "Memory/mem_helper.h"
 #include "arch/x86_64/IDT/APIC.hpp"
-#include "../Drivers/Network/Drivers/RTL8139.hpp"
+#include "Drivers/Network/Drivers/RTL8139.hpp"
 #include "Drivers/hpet/hpet.h"
 #include "uacpi/uacpi.h"
-#include "Drivers/Network/Ethernet.hpp"
 
 extern u64 kernel_address_vert;
 extern u64 kernel_address_phys;
@@ -127,6 +124,8 @@ namespace systemPL {
         partition_manager.init(device);
 
         fb.swap();
+
+        while (true) {}
 
         enter_user_space();
     }
