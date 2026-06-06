@@ -47,10 +47,10 @@ namespace IDT {
             return;
         }
 
-        if (irq_no >= 24) { // PIC IRQ 0–15
-            log::error("[ IDT ] Install_handler &cERROR&f: &cinvalid &firq &e%u", irq_no);
-            return;
-        }
+        //if (irq_no >= 24) { // PIC IRQ 0–15
+        //    log::error("[ IDT ] Install_handler &cERROR&f: &cinvalid &firq &e%u", irq_no);
+        //    return;
+        //}
 
         const uint8_t vector = irq_no + 32;
 

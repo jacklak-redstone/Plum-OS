@@ -7,10 +7,14 @@
 #include "kernel/Sleep.hpp"
 #include "kernel/Memory/heap.hpp"
 #include "std/string.h"
+#include "std/trigonometry.hpp"
 
 namespace Chess {
     using namespace OpenPL;
     constexpr float rect_size = 0.1f;
+    volatile uint64_t frames;
+    volatile uint64_t last_tick;
+    Framebuffer fr{};
 
     void vshader(Shader::VS_ShaderIn *In, Shader::VS_ShaderOut *out, void *uniforms) {
 
@@ -56,7 +60,6 @@ namespace Chess {
         pipeline.Fragment_shader = frshader;
         ctx.bind_pipeline(pipeline);
 
-        Framebuffer fr{};
         fr.bpp = bpp;
         fr.width = w;
         fr.height = h;
@@ -64,28 +67,31 @@ namespace Chess {
 
         ctx.bind_framebuffer(fr);
 
-        u32 color = 0xff;
-        uint64_t frames = 0;
-        uint64_t last_tick = Time::tick;
-        while (true) {
-            frames++;
+        u32 color = 0x0;
+        frames = 0;
+        last_tick = Time::tick;
+        while (true) { // Main Loop
 
             ctx.Clear(color);
+            color++;
             sys_openPL(&ctx, GL_SWAP);
 
-            uint64_t now = Time::tick;
-            if (now - last_tick >= 100) {
-                std::printf("\t\t\t&f Compiled with=&c-O0\n", std::Output::std_out, frames); // bc -O1-3 broken
-                std::printf("\t\t\t&7FPS: &f%u\n", std::Output::std_out, frames);
-                std::printf("\t&fScreen Info: &7Unknown (too lazy)  &bScaling&f=&eNearest\n");
-                std::printf("\t&fFramebuffer Info: &awidth&f=&e%u  &bheight&f=&e%u  &cbpp&f=&e%u\n", std::Output::std_out, fr.width, fr.height, fr.bpp);
-
-                color = frames;
-                frames = 0;
-                last_tick = now;
-                //sys_sleep(1000000); // to be able to see how many fps
-                break;
-            }
+            if (fps()) return;
         }
+    }
+
+    bool fps() {
+        volatile uint64_t now = Time::tick;
+        if (now - last_tick >= 100) {
+            std::printf("\t\t\t&f Compiled with=&c-O0 huh it fixed now so nvm\n"); // bc -O1-3 broken
+            std::printf("\t\t\t&7FPS: &f%u\n", std::Output::std_out, frames);
+            std::printf("\t&fScreen Info: &7Unknown (too lazy)  &bScaling&f=&eNearest\n");
+            std::printf("\t&fFramebuffer Info: &awidth&f=&e%u  &bheight&f=&e%u  &cbpp&f=&e%u\n", std::Output::std_out, fr.width, fr.height, fr.bpp);
+            std::printf("sin(1.0) = %f sin(5.9) = %f sin(0.67) = %f sin(3.3) = %f\n", std::Output::std_out, std::sin(1.0), std::sin(5.9), std::sin(0.67), std::sin(3.3));
+
+            return true;
+        }
+        frames++;
+        return false;
     }
 }

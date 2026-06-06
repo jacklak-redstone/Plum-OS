@@ -73,10 +73,12 @@ namespace systemPL {
         uacpi_setup_early_table_access(acpi_early_buf, sizeof(acpi_early_buf));
         ioapic.init();
         acpi.init();
+        fb.swap();
 
-        log::info("\n");
+        log::info("\n"); fb.swap();
 
-        hpet::init();
+        // TODO FIX
+        //hpet::init();
 
         log::info("\n");
 
@@ -88,7 +90,7 @@ namespace systemPL {
         drivers::ps2::init(acpi);
         acpi.enumerate_bus();
 
-        log::info("\n");
+        log::info("\n"); fb.swap();
 
         ahci.init();
         for (int i = 0; i < 32; ++i) {
@@ -116,16 +118,12 @@ namespace systemPL {
             //heap::free_align(buffer);
         }
 
-        fb.swap();
 
         Time::Sleep(100);
 
         auto device = ahci.request_device(0);
         partition_manager.init(device);
-
         fb.swap();
-
-        while (true) {}
 
         enter_user_space();
     }

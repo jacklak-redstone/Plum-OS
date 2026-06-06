@@ -29,7 +29,12 @@ namespace OpenPL {
 
         for (int y = 0; y < framebuffer.height; y++) {
             for (int x = 0; x < framebuffer.width; x++) {
-                fb[x+(y*w)] = Color+x*y;
+                const uint8_t v = (x ^ y ^ (Color & 0xFF)) & 0xFF;
+
+                fb[x + y * w] = v;
+
+                //fb[x+(y*w)] = Color+x*y;
+
                 //float cx = (x - w * 0.5f) * 3.0f / w;
                 //float cy = (y - h * 0.5f) * 2.0f / h;
 //
