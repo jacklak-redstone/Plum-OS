@@ -8,6 +8,6 @@ namespace Chess {
     void main(int argc, char** argv);
 
     bool fps();
-    extern volatile uint64_t frames;
+    extern volatile uint32_t frames;
     extern volatile uint64_t last_tick;
 }

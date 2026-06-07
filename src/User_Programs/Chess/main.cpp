@@ -8,11 +8,12 @@
 #include "kernel/Memory/heap.hpp"
 #include "std/string.h"
 #include "std/trigonometry.hpp"
+#include "std/math.hpp"
 
 namespace Chess {
     using namespace OpenPL;
-    constexpr float rect_size = 0.1f;
-    volatile uint64_t frames;
+
+    volatile uint32_t frames;
     volatile uint64_t last_tick;
     Framebuffer fr{};
 
@@ -33,20 +34,32 @@ namespace Chess {
                 if (std::str_cmp(argv[i], "-w") && i+1 < argc) {
                     w = std::str_to_int(argv[i+1]);
                     if (w < 2) w = 2;
-                    if (w > 4096) w = 4096;
+                    if (w > 3072) w = 3072;
+                    i++;
                 } else if (std::str_cmp(argv[i], "-h") && i+1 < argc) {
                     h = std::str_to_int(argv[i+1]);
                     if (h < 2) h = 2;
-                    if (h > 4096) h = 4096;
+                    if (h > 3072) h = 3072;
+                    i++;
                 } else if (std::str_cmp(argv[i], "-bpp") && i+1 < argc) {
                     bpp = std::str_to_int(argv[i+1]);
                     if (bpp < 32) bpp = 32;
                     if (bpp > 32) bpp = 32;
+                    i++;
                 } else if (std::str_cmp(argv[i], "--help")) {
                     std::printf("&7Usage: &fchess &e[OPTIONS]\n\n");
                     std::printf("&eOption     &fMeaning\n");
-                    std::printf("&b-w         &7Set width to custom value. Range from 2 to 4096 pixels\n");
-                    std::printf("&b-h         &7Set heigh to custom value. Range from 2 to 4096 pixels\n");
+                    std::printf("&b-w         &7Set width to custom value. Range from 2 to 3072 pixels\n");
+                    std::printf("&b-h         &7Set heigh to custom value. Range from 2 to 3072 pixels\n");
+                    std::printf("&b-bpp       &7Set bits-per-pixel to custom vallue. Range from 32 to 32 pixels\n");
+                    std::printf("&b--help     &7This text\n");
+                    std::printf("&fExample:&7 chess -w 32 -h 67 -bpp 32\n");
+                    return;
+                } else {
+                    std::printf("&7Usage: &fchess &e[OPTIONS]\n\n");
+                    std::printf("&eOption     &fMeaning\n");
+                    std::printf("&b-w         &7Set width to custom value. Range from 2 to 3072 pixels\n");
+                    std::printf("&b-h         &7Set heigh to custom value. Range from 2 to 3072 pixels\n");
                     std::printf("&b-bpp       &7Set bits-per-pixel to custom vallue. Range from 32 to 32 pixels\n");
                     std::printf("&b--help     &7This text\n");
                     std::printf("&fExample:&7 chess -w 32 -h 67 -bpp 32\n");
@@ -63,7 +76,12 @@ namespace Chess {
         fr.bpp = bpp;
         fr.width = w;
         fr.height = h;
-        fr.framebuffer = static_cast<uint32_t *>(heap::malloc(w * h * bpp/8));
+        const auto raw = heap::malloc(w * h * bpp/8);
+        if (raw == nullptr) {
+            std::printf("&f[ CHESS ] &cNULLPTR in frmaebuffer!\n");
+            return;
+        }
+        fr.framebuffer = static_cast<uint32_t *>(raw);
 
         ctx.bind_framebuffer(fr);
 
@@ -82,13 +100,12 @@ namespace Chess {
 
     bool fps() {
         volatile uint64_t now = Time::tick;
-        if (now - last_tick >= 100) {
+        if (now - last_tick >= 200) {
             std::printf("\t\t\t&f Compiled with=&c-O0 huh it fixed now so nvm\n"); // bc -O1-3 broken
-            std::printf("\t\t\t&7FPS: &f%u\n", std::Output::std_out, frames);
+            std::printf("\t\t\t&fFPS: &e%u     &e%f&bms &fper frame\n", std::Output::std_out, frames/2, 2.0 / static_cast<float>(frames));
             std::printf("\t&fScreen Info: &7Unknown (too lazy)  &bScaling&f=&eNearest\n");
             std::printf("\t&fFramebuffer Info: &awidth&f=&e%u  &bheight&f=&e%u  &cbpp&f=&e%u\n", std::Output::std_out, fr.width, fr.height, fr.bpp);
-            std::printf("sin(1.0) = %f sin(5.9) = %f sin(0.67) = %f sin(3.3) = %f\n", std::Output::std_out, std::sin(1.0), std::sin(5.9), std::sin(0.67), std::sin(3.3));
-
+            heap::free(fr.framebuffer);
             return true;
         }
         frames++;
