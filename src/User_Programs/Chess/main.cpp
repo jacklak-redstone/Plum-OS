@@ -17,15 +17,29 @@ namespace Chess {
     volatile uint64_t last_tick;
     Framebuffer fr{};
 
-    void vshader(const Shader::VS_ShaderIn *In, Shader::VS_ShaderOut *out, void *uniforms) {
+    void vshader(const Shader::VS_ShaderIn *In, Shader::VS_ShaderOut *out, void *uniform) {
         const glm::vec3 pos = *reinterpret_cast<glm::vec3 *>(In->attributes[0].data);
         const glm::vec3 color = *reinterpret_cast<glm::vec3 *>(In->attributes[1].data);
+        const auto uni = static_cast<uniforms *>(uniform);
+        const float angle = uni->angle;
 
-        out->position = glm::vec4(pos, 1.0f);
-        out->inv_w = 1.0f;
-        out->varyings[0] = std::clamp(color.r, 0.0f, 1.0f);
-        out->varyings[1] = std::clamp(color.g, 0.0f, 1.0f);
-        out->varyings[2] = std::clamp(color.b, 0.0f, 1.0f);
+        const float s = std::sin(angle);
+        const float c = std::cos(angle);
+
+        glm::vec3 p = pos;
+
+        const float x = p.x * c - p.z * s;
+        const float z = p.x * s + p.z * c;
+
+        p.x = x;
+        p.z = z + 2.0f;
+
+        out->position = glm::vec4(p.x, p.y, p.z,p.z);
+        out->inv_w = 1.0f / p.z;
+
+        out->varyings[0] = color.r;
+        out->varyings[1] = color.g;
+        out->varyings[2] = color.b;
         out->flat_mask = ~0b111;
         out->used_mask = 0b111;
     }
@@ -42,7 +56,7 @@ namespace Chess {
     }
 
     void main(const int argc, char** argv) {
-        uint32_t w = 1080;
+        uint32_t w = 1024;
         uint32_t h = 768;
         uint32_t bpp = 32;
         if (argc > 1 && argv) {
@@ -87,7 +101,7 @@ namespace Chess {
         Pipeline pipeline{};
         pipeline.Vertex_shader = vshader;
         pipeline.Fragment_shader = frshader;
-        pipeline.cull_mode = CullingMode::NONE;
+        pipeline.cull_mode = CullingMode::BACK;
         ctx.bind_pipeline(pipeline);
 
         fr.bpp = bpp;
@@ -105,55 +119,59 @@ namespace Chess {
         ctx.bind_framebuffer(fr);
 
         float vertices[] = {
-            // tri 1
-            0.7f,  0.5f, 0.4f, 1.0f, 0.0f, 0.0f,
-           -0.5f, -0.5f, 0.2f, 0.0f, 1.0f, 0.0f,
-            0.5f, -0.5f, 0.2f, 0.0f, 0.0f, 1.0f,
+            // Front
+            -0.5f,-0.5f, 0.5f, 1,0,0,
+             0.5f,-0.5f, 0.5f, 1,1,0,
+             0.5f, 0.5f, 0.5f, 1,1,1,
 
-            // tri 2
-            -0.3f, 0.6f, 1.0f, 1.0f, 1.0f, 0.0f,
-            -0.5f, 0.2f, 1.0f, 1.0f, 0.0f, 0.0f,
-            0.2f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f,
+            -0.5f,-0.5f, 0.5f, 1,0,0,
+             0.5f, 0.5f, 0.5f, 1,1,1,
+            -0.5f, 0.5f, 0.5f, 1,0,1,
 
-            // tri 3
-             0.6f,  0.6f, 0.0f, 1.0f, 1.0f, 1.0f,
-             0.3f,  0.2f, 0.1f, 0.0f, 0.0f, 0.0f,
-             0.9f,  0.2f, 0.0f, 0.5f, 0.5f, 0.5f,
+            // Back
+             0.5f,-0.5f,-0.5f, 0,0,1,
+            -0.5f,-0.5f,-0.5f, 0,1,1,
+            -0.5f, 0.5f,-0.5f, 1,0,1,
 
-            // tri 4
-            -0.6f, -0.2f, 0.0f, 1.0f, 0.0f, 1.0f,
-           -0.9f, -0.6f, 0.0f, 1.0f, 0.0f, 0.0f,
-           -0.3f, -0.6f, 0.1f, 0.0f, 1.0f, 1.0f,
+             0.5f,-0.5f,-0.5f, 0,0,1,
+            -0.5f, 0.5f,-0.5f, 1,0,1,
+             0.5f, 0.5f,-0.5f, 1,1,1,
 
-            // tri 5
-             0.6f, -0.2f, 0.2f, 0.6f, 0.2f, 0.6f,
-             0.3f, -0.6f, 0.0f, 0.7f, 1.0f, 1.0f,
-             0.9f, -0.6f, 0.0f, 0.1f, 0.8f, 0.1f,
+            // Left
+            -0.5f,-0.5f,-0.5f, 0,1,1,
+            -0.5f,-0.5f, 0.5f, 1,0,0,
+            -0.5f, 0.5f, 0.5f, 1,0,1,
 
-            // tri 6
-             0.0f,  0.0f, 0.0f, 0.1f, 0.0f, 0.3f,
-             0.2f, -0.3f, 0.3f, 0.0f, 0.9f, 0.0f,
-            -0.2f, -0.3f, 0.3f, 0.0f, 0.0f, 0.6f,
+            -0.5f,-0.5f,-0.5f, 0,1,1,
+            -0.5f, 0.5f, 0.5f, 1,0,1,
+            -0.5f, 0.5f,-0.5f, 0,0,1,
 
-            // tri 7
-            -0.2f,  0.3f, 0.6f, 0.0f, 0.1f, 0.2f,
-            -0.4f,  0.0f, 0.0f, 0.2f, 0.8f, 0.0f,
-             0.0f,  0.0f, 0.7f, 0.1f, 0.0f, 0.3f,
+            // Right
+             0.5f,-0.5f, 0.5f, 1,1,0,
+             0.5f,-0.5f,-0.5f, 0,0,1,
+             0.5f, 0.5f,-0.5f, 1,1,1,
 
-            // tri 8
-             0.2f,  0.3f, 0.5f, 1.0f, 0.0f, 0.0f,
-             0.0f,  0.0f, 0.5f, 0.5f, 0.0f, 0.0f,
-             0.4f,  0.0f, 0.5f, 0.0f, 0.0f, 0.0f,
+             0.5f,-0.5f, 0.5f, 1,1,0,
+             0.5f, 0.5f,-0.5f, 1,1,1,
+             0.5f, 0.5f, 0.5f, 0,1,0,
 
-            // tri 9
-            -0.8f,  0.0f, 0.1f, 0.0f, 1.0f, 0.0f,
-            -0.6f, -0.4f, 0.1f, 0.0f, 0.5f, 0.0f,
-            -1.0f, -0.4f, 0.1f, 0.0f, 0.0f, 0.0f,
+            // Top
+            -0.5f, 0.5f, 0.5f, 1,0,1,
+             0.5f, 0.5f, 0.5f, 0,1,0,
+             0.5f, 0.5f,-0.5f, 1,1,1,
 
-            // tri 10
-             0.8f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             1.0f, -0.4f, 0.2f, 0.0f, 0.0f, 0.5f,
-             0.6f, -0.4f, 0.3f, 0.0f, 0.0f, 0.0f,
+            -0.5f, 0.5f, 0.5f, 1,0,1,
+             0.5f, 0.5f,-0.5f, 1,1,1,
+            -0.5f, 0.5f,-0.5f, 0,0,1,
+
+            // Bottom
+            -0.5f,-0.5f,-0.5f, 0,1,1,
+             0.5f,-0.5f,-0.5f, 0,0,1,
+             0.5f,-0.5f, 0.5f, 1,1,0,
+
+            -0.5f,-0.5f,-0.5f, 0,1,1,
+             0.5f,-0.5f, 0.5f, 1,1,0,
+            -0.5f,-0.5f, 0.5f, 1,0,0,
         };
 
         ctx.bind_vertex_buffer(reinterpret_cast<uint8_t *>(vertices), sizeof(vertices));
@@ -161,20 +179,23 @@ namespace Chess {
         ctx.set_vertex_attr_type(1, AttributeType::ATTR_VEC3);
 
         uniforms uni = {w, h};
-        ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
 
-        u32 color = 0x0;
+        float angle = 0x0;
+        int color;
         frames = 0;
         last_tick = Time::tick;
         while (true) { // Main Loop
 
-            ctx.Clear(color);
             color++;
+            ctx.Clear(color);
+            angle += 0.01;
 
-            ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*10);
+            uni.angle = angle;
+            ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
+            ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
 
             sys_openPL(&ctx, GL_SWAP);
-            if (fps()) return;
+            //if (fps()) return;
         }
     }
 

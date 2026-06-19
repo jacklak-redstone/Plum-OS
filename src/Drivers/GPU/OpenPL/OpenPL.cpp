@@ -29,20 +29,25 @@ namespace OpenPL {
         float* db = framebuffer.depthbuffer;
         const uint32_t w = framebuffer.width;
         const uint32_t h = framebuffer.height;
+        constexpr float depth = 0.0f;
+        uint32_t bits;
+        mem::memcpy((uint32_t *)&bits, &depth, sizeof(depth));
 
         mem::memset32(fb, Color, h*w);
-        mem::memset32(reinterpret_cast<uint32_t *>(db), 0x3f800000, h*w); // trust 0x3f800000 is 1.0f
+        mem::memset32(reinterpret_cast<uint32_t *>(db), bits, h*w);
     }
 
     bool Context::set_vertex_attr_type(const uint8_t attribute, const AttributeType type) {
         if (attribute < 0 || attribute >= Shader::MAX_ATTRIBUTES) return false;
         attribute_type[attribute] = type;
+        vbo_updated = true;
         return true;
     }
 
     bool Context::set_uniform_ptr(uint8_t *ptr) {
         if (ptr == nullptr) return false;
         uniform_ptr = ptr;
+        vbo_updated = true;
         return true;
     }
 
@@ -191,12 +196,12 @@ namespace OpenPL {
                     for (int y = y_min; y < y_max; y++) {
                         uint32_t idx = (x_min + y * w) - 1; // -1 bc we increment at start
                         // - ABCx.x bc we increment at start
-                        float w1 = w1_row - ABC1.x;
-                        float w2 = w2_row - ABC2.x;
-                        float w3 = w3_row - ABC3.x;
-                        float depth = depth_row - depth_dx;
+                        float w1 = w1_row;
+                        float w2 = w2_row;
+                        float w3 = w3_row;
+                        float depth = depth_row;
                         for (int v_idx = 0; v_idx <= last_used_varying; v_idx++) {
-                            vars[v_idx] = vars_row[v_idx] - vars_dx[v_idx];
+                            vars[v_idx] = vars_row[v_idx];
                         }
                         for (int x = x_min; x < x_max; x++) {
                             // At start bc if at end it would sometimes be skipped if not in triangle
@@ -210,7 +215,7 @@ namespace OpenPL {
                             }
 
                             // Depth test
-                            if (depth > db[idx]) continue;
+                            if (depth <= db[idx]) continue;
 
                             // In triangle test             Back                                 Front
                             const bool inside = (w1 >= 0 && w2 >= 0 && w3 >= 0) || (w1 <= 0 && w2 <= 0 && w3 <= 0);

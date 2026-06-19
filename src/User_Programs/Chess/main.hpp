@@ -8,6 +8,7 @@ namespace Chess {
     struct uniforms {
         uint32_t w;
         uint32_t h;
+        float angle;
     };
 
     void main(int argc, char** argv);
