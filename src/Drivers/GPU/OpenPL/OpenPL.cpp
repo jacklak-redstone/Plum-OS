@@ -29,7 +29,7 @@ namespace OpenPL {
         float* db = framebuffer.depthbuffer;
         const uint32_t w = framebuffer.width;
         const uint32_t h = framebuffer.height;
-        constexpr float depth = 0.0f;
+        constexpr float depth = 99999.0f;
         uint32_t bits;
         mem::memcpy((uint32_t *)&bits, &depth, sizeof(depth));
 
@@ -134,6 +134,9 @@ namespace OpenPL {
                     } else if (pipeline.cull_mode == CullingMode::NONE) {
                     }
 
+                    if (std::abs(area) < 1e-6f)
+                        continue;
+
                     const float invArea = 1.0f / area;
 
                     const int x_min = std::max(static_cast<int>(std::min(std::min(p1_screen.x, p2_screen.x), p3_screen.x)), 0);
@@ -215,7 +218,7 @@ namespace OpenPL {
                             }
 
                             // Depth test
-                            if (depth <= db[idx]) continue;
+                            if (depth >= db[idx] || depth < 0.1) continue;
 
                             // In triangle test             Back                                 Front
                             const bool inside = (w1 >= 0 && w2 >= 0 && w3 >= 0) || (w1 <= 0 && w2 <= 0 && w3 <= 0);

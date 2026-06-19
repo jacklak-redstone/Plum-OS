@@ -18,21 +18,29 @@ namespace Chess {
     Framebuffer fr{};
 
     void vshader(const Shader::VS_ShaderIn *In, Shader::VS_ShaderOut *out, void *uniform) {
-        const glm::vec3 pos = *reinterpret_cast<glm::vec3 *>(In->attributes[0].data);
-        const glm::vec3 color = *reinterpret_cast<glm::vec3 *>(In->attributes[1].data);
         const auto uni = static_cast<uniforms *>(uniform);
-        const float angle = uni->angle;
+        const glm::vec3 pos = *reinterpret_cast<glm::vec3 *>(In->attributes[0].data) + uni->offset;
+        const glm::vec3 color = *reinterpret_cast<glm::vec3 *>(In->attributes[1].data);
+        const float pitch = uni->pitch;
+        const float yaw = uni->yaw;
 
-        const float s = std::sin(angle);
-        const float c = std::cos(angle);
+        const float sx = std::sin(yaw);
+        const float cx = std::cos(yaw);
+
+        const float sy = std::sin(pitch);
+        const float cy = std::cos(pitch);
 
         glm::vec3 p = pos;
 
-        const float x = p.x * c - p.z * s;
-        const float z = p.x * s + p.z * c;
+        const float x1 = p.x * cy - p.z * sy;
+        const float z1 = p.x * sy + p.z * cy;
 
-        p.x = x;
-        p.z = z + 2.0f;
+        const float y2 = p.y * cx - z1 * sx;
+        const float z2 = p.y * sx + z1 * cx;
+
+        p.x = x1;
+        p.y = y2;
+        p.z = z2 + 4.0f;
 
         out->position = glm::vec4(p.x, p.y, p.z,p.z);
         out->inv_w = 1.0f / p.z;
@@ -45,7 +53,7 @@ namespace Chess {
     }
 
     bool frshader(const Shader::FR_ShaderIN *In, Shader::FS_ShaderOut *out, void *uniform) {
-        //const auto D = static_cast<uint8_t>(std::clamp(In->depth, 0.0f, 1.0f) * 255);
+        //const auto D = static_cast<uint8_t>(std::clamp(std::fract(In->depth), 0.0f, 1.0f) * 255);
         const auto R = static_cast<uint8_t>(In->varyings[0] * 255);
         const auto G = static_cast<uint8_t>(In->varyings[1] * 255);
         const auto B = static_cast<uint8_t>(In->varyings[2] * 255);
@@ -178,9 +186,8 @@ namespace Chess {
         ctx.set_vertex_attr_type(0, AttributeType::ATTR_VEC3);
         ctx.set_vertex_attr_type(1, AttributeType::ATTR_VEC3);
 
-        uniforms uni = {w, h};
+        uniforms uni = {0.0f, 0.0f};
 
-        float angle = 0x0;
         int color;
         frames = 0;
         last_tick = Time::tick;
@@ -188,9 +195,37 @@ namespace Chess {
 
             color++;
             ctx.Clear(color);
-            angle += 0.01;
+            uni.pitch += 0.01;
+            uni.yaw += 0.05;
 
-            uni.angle = angle;
+            // Eye 1
+            uni.offset = glm::vec3(1.5f, 1.5f, 0.0f);
+            ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
+            ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
+
+            // Eye 2
+            uni.offset = glm::vec3(-1.5f, 1.5f, 0.0f);
+            ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
+            ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
+
+            // Month
+            uni.offset = glm::vec3(0.0f, -1.5f, 0.0f);
+            ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
+            ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
+
+            uni.offset = glm::vec3(1.0f, -1.5f, 0.0f);
+            ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
+            ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
+
+            uni.offset = glm::vec3(-1.0f, -1.5f, 0.0f);
+            ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
+            ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
+
+            uni.offset = glm::vec3(-2.0f, -1.0f, 0.0f);
+            ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
+            ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
+
+            uni.offset = glm::vec3(2.0f, -1.0f, 0.0f);
             ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni));
             ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
 

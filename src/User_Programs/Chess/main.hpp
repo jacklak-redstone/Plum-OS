@@ -6,9 +6,9 @@ namespace Chess {
     extern OpenPL::Framebuffer fr;
 
     struct uniforms {
-        uint32_t w;
-        uint32_t h;
-        float angle;
+        float pitch;
+        float yaw;
+        glm::vec3 offset;
     };
 
     void main(int argc, char** argv);
