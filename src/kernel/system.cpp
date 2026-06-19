@@ -37,11 +37,11 @@ namespace systemPL {
         Paging::Init(); // 4KB page size
 
         // Heap Initialization
-        heap::heap_init(1024*1024*64, heap_addr);
-        Paging::Map_memory_vp(heap_addr, to_physical(heap_addr), 1024*1024*64, Paging::Profile::KernelData);
+        heap::heap_init(1024*1024*256, heap_addr);
+        Paging::Map_memory_vp(heap_addr, to_physical(heap_addr), 1024*1024*256, Paging::Profile::KernelData);
 
         // Paging
-        Paging::Map_memory(0x0, 1024*1024*96, Paging::Profile::UserCode);
+        //Paging::Map_memory(0x0, 1024*1024*96, Paging::Profile::UserCode);
 
         u64 kernel_size = reinterpret_cast<u64>(&Linker::__kernel_end) - reinterpret_cast<u64>(&Linker::__kernel_start);
         Paging::Map_memory_vp(kernel_address_vert, kernel_address_phys, kernel_size, Paging::Profile::KernelCode | Paging::Writable);
@@ -75,12 +75,12 @@ namespace systemPL {
         acpi.init();
         fb.swap();
 
-        log::info("\n"); fb.swap();
+        log::info("HPET:\n"); fb.swap();
 
         // TODO FIX
         //hpet::init();
 
-        log::info("\n");
+        log::info("USB:\n");
 
         USB::m_xhci_driver.init_device();
         USB::m_xhci_driver.start_device();

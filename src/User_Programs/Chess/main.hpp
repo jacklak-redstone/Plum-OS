@@ -5,6 +5,11 @@
 namespace Chess {
     extern OpenPL::Framebuffer fr;
 
+    struct uniforms {
+        uint32_t w;
+        uint32_t h;
+    };
+
     void main(int argc, char** argv);
 
     bool fps();

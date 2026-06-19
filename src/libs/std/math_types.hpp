@@ -131,7 +131,15 @@ namespace glm {
 
         vec3() = default;
         vec3(const float x, const float y, const float z) : x(x), y(y), z(z) {}
+        // vec2 float
+        vec3(const float x, const vec2 v2) : x(x), y(v2.x), z(v2.y) {}
+        vec3(const vec2 v2, const float z) : x(v2.x), y(v2.y), z(z) {}
+
         explicit vec3(const float a) : x(a), y(a), z(a) {}
+
+        vec2 get_v2() const {
+            return vec2(x, y);
+        }
 
         vec3& operator+=(const vec3& other) {
             x += other.x;
@@ -196,7 +204,24 @@ namespace glm {
 
         vec4() = default;
         vec4(const float x, const float y, const float z, const float w) : x(x), y(y), z(z), w(w) {}
+        // vec3 float
+        vec4(const float x, const vec3 v3) : x(x), y(v3.x), z(v3.y), w(v3.z) {}
+        vec4(const vec3 v3, const float w) : x(v3.x), y(v3.y), z(v3.z), w(w) {}
+        // vec2 float
+        vec4(const float x, const float y, const vec2 v2) : x(x), y(y), z(v2.x), w(v2.y) {}
+        vec4(const vec2 v2, const float z, const float w) : x(v2.x), y(v2.y), z(z), w(w) {}
+        vec4(const float x, const vec2 v2, const float w) : x(x), y(v2.x), z(v2.y), w(w) {}
+        // vec2 vec2
+        vec4(const vec2 v2_1, const vec2 v2_2) : x(v2_1.x), y(v2_1.y), z(v2_2.x), w(v2_2.y) {}
         explicit vec4(const float a) : x(a), y(a), z(a), w(a) {}
+
+        vec2 get_v2() const {
+            return vec2(x, y);
+        }
+
+        vec3 get_v3() const {
+            return vec3(x,y,z);
+        }
 
         vec4& operator+=(const vec4& other) {
             x += other.x;

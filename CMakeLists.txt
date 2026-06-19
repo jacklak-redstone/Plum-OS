@@ -67,7 +67,7 @@ target_compile_options(Kernel PRIVATE
         # General
         -g
         -Wall
-        -O0
+        -O3
         # ---------------------
         # uACPI
         -DUACPI_OVERRIDE_CONFIG
