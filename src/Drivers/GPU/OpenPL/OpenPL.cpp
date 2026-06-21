@@ -29,9 +29,9 @@ namespace OpenPL {
         float* db = framebuffer.depthbuffer;
         const uint32_t w = framebuffer.width;
         const uint32_t h = framebuffer.height;
-        constexpr float depth = 99999.0f;
+        const float depth = pipeline.far_plane;
         uint32_t bits;
-        mem::memcpy((uint32_t *)&bits, &depth, sizeof(depth));
+        mem::memcpy(&bits, &depth, sizeof(depth));
 
         mem::memset32(fb, Color, h*w);
         mem::memset32(reinterpret_cast<uint32_t *>(db), bits, h*w);
@@ -41,6 +41,10 @@ namespace OpenPL {
         if (attribute < 0 || attribute >= Shader::MAX_ATTRIBUTES) return false;
         attribute_type[attribute] = type;
         vbo_updated = true;
+        vbo_stride = 0;
+        for (const AttributeType t : attribute_type) {
+            vbo_stride += size_of_attr(t);
+        }
         return true;
     }
 
@@ -76,7 +80,6 @@ namespace OpenPL {
 
             // Vertex Shader Pass
             if (vbo_updated) {
-                uint8_t *adr = vertex_Buffer;
                 if (vertex_cache.capacity() < num_of_vert)
                     vertex_cache.reserve(num_of_vert);
                 vertex_cache.clear();
@@ -85,16 +88,18 @@ namespace OpenPL {
 
                 for (int i = start; i < start+num_of_vert; i++) {
 
+                    uint8_t *adr = vertex_Buffer + (i * vbo_stride);
+
                     for (int idx = 0; idx < Shader::MAX_ATTRIBUTES; idx++) {
 
-                        if (attribute_type[idx] == AttributeType::ATTR_NONE) {
+                        if (attribute_type[idx] == AttributeType::ATTR_NONE)
                             continue;
-                        }
 
                         in.attributes[idx].type = attribute_type[idx];
                         in.attributes[idx].data = adr;
                         adr += size_of_attr(attribute_type[idx]);
                     }
+
                     pipeline.Vertex_shader(&in, &out, uniform_ptr);
                     vertex_cache.push_back(out);
                 }
@@ -138,11 +143,13 @@ namespace OpenPL {
                         continue;
 
                     const float invArea = 1.0f / area;
+                    const float near_plane = pipeline.near_plane;
+                    const float far_plane = pipeline.far_plane;
 
-                    const int x_min = std::max(static_cast<int>(std::min(std::min(p1_screen.x, p2_screen.x), p3_screen.x)), 0);
-                    const int y_min = std::max(static_cast<int>(std::min(std::min(p1_screen.y, p2_screen.y), p3_screen.y)), 0);
-                    const int x_max = std::min(static_cast<int>(std::max(std::max(p1_screen.x, p2_screen.x), p3_screen.x)), static_cast<int>(w));
-                    const int y_max = std::min(static_cast<int>(std::max(std::max(p1_screen.y, p2_screen.y), p3_screen.y)), static_cast<int>(h));
+                    const int x_min = std::max(std::floor(std::min(std::min(p1_screen.x, p2_screen.x), p3_screen.x)), 0);
+                    const int y_min = std::max(std::floor(std::min(std::min(p1_screen.y, p2_screen.y), p3_screen.y)), 0);
+                    const int x_max = std::min(std::ceiling(std::max(std::max(p1_screen.x, p2_screen.x), p3_screen.x)), static_cast<int>(w));
+                    const int y_max = std::min(std::ceiling(std::max(std::max(p1_screen.y, p2_screen.y), p3_screen.y)), static_cast<int>(h));
 
                     const glm::vec3 ABC1 = {p2_screen.y - p3_screen.y, p3_screen.x - p2_screen.x, p2_screen.x * p3_screen.y - p2_screen.y * p3_screen.x};
                     const glm::vec3 ABC2 = {p3_screen.y - p1_screen.y, p1_screen.x - p3_screen.x, p3_screen.x * p1_screen.y - p3_screen.y * p1_screen.x};
@@ -218,7 +225,7 @@ namespace OpenPL {
                             }
 
                             // Depth test
-                            if (depth >= db[idx] || depth < 0.1) continue;
+                            if (depth >= db[idx] || depth < near_plane) continue;
 
                             // In triangle test             Back                                 Front
                             const bool inside = (w1 >= 0 && w2 >= 0 && w3 >= 0) || (w1 <= 0 && w2 <= 0 && w3 <= 0);

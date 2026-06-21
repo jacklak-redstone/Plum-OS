@@ -83,6 +83,9 @@ namespace OpenPL {
         Shader::frag_Shader Fragment_shader;
 
         CullingMode cull_mode = CullingMode::BACK;
+
+        float near_plane = 0.05f;
+        float far_plane = 1000.0f;
     };
 
     struct Framebuffer {
@@ -94,7 +97,9 @@ namespace OpenPL {
     };
 
     #define GL_SWAP 0
+
     uint64_t size_of_attr(AttributeType type);
+
     inline float edge(const glm::vec2 A, const glm::vec2 B, const glm::vec2 P) {
         return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
     }
@@ -114,6 +119,7 @@ namespace OpenPL {
     private:
         std::vector<Shader::VS_ShaderOut> vertex_cache;
         bool vbo_updated = true;
+        uint32_t vbo_stride = 0;
 
         Framebuffer framebuffer{};
 

@@ -5,6 +5,9 @@
 namespace Chess {
     extern OpenPL::Framebuffer fr;
 
+    void vshader(const OpenPL::Shader::VS_ShaderIn *In, OpenPL::Shader::VS_ShaderOut *out, void *uniform);
+    bool frshader(const OpenPL::Shader::FR_ShaderIN *In, OpenPL::Shader::FS_ShaderOut *out, void *uniform);
+
     struct uniforms {
         float pitch;
         float yaw;
