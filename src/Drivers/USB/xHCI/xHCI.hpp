@@ -143,6 +143,8 @@ namespace USB {
         int32_t _get_device_descriptor(xhci_device* device, void* out, uint16_t length);
 
         int32_t _send_control_transfer(xhci_device* device,xhci_device_request_packet& request,void* buffer, uint32_t length);
+
+        uint32_t _read_mfindex() const;
     };
 
     extern xhci_driver m_xhci_driver;

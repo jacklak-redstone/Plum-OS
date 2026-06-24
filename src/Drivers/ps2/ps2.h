@@ -43,11 +43,13 @@ namespace drivers::ps2 {
 
     i32 probe(uacpi_namespace_node* node, uacpi_namespace_node_info* info);
     void init(acpi::acpi& acpi);
+    void flush_buffers();
     status_register read_status();
     config_register read_config();
     void write_config(config_register config);
     void wait_for_command_completion();
     void wait_for_read();
+    bool wait_for_ack(int max_polls = 100000);
     void send_data_to_device(i8 device, u8 data);
     bool reset_device(i8 device);
     void keyboard_interrupt(const IDT::ISR_Registers* regs);

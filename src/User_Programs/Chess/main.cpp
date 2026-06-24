@@ -157,9 +157,9 @@ namespace Chess {
             uni.pitch += 0.01;
             uni.yaw += 0.05;
 
-            for (int y = -2; y < 2; y++) {
-                for (int x = -2; x < 2; x++) {
-                    for (int z = -2; z < 2; z++) {
+            for (int y = -8; y < 8; y++) {
+                for (int x = -8; x < 8; x++) {
+                    for (int z = -8; z < 8; z++) {
                         uni.offset = glm::vec3(x, y, z);
                         ctx.set_uniform_ptr(reinterpret_cast<uint8_t *>(&uni)); // Any change to uniforms/VBO wont appear instantly you need to force it
                         ctx.Draw(PrimitiveType::TRIANGLES, 0, 3*12);
@@ -170,7 +170,7 @@ namespace Chess {
             // Swap screen with framebuffer
             sys_openPL(&ctx, GL_SWAP);
 
-            //if (fps()) return;
+            if (fps()) return;
         }
     }
 

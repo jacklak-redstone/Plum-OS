@@ -61,10 +61,8 @@ namespace drivers::ps2 {
         x64::outb(INPUT_PORT, 0xA7);
         wait_for_command_completion();
 
-        // flush
         log::info("[ PS2 ] Flushing buffers...");
-        while (read_status().output_buffer_status == true)
-            x64::inb(OUTPUT_PORT);
+        flush_buffers(); // Flush
 
         // do config stuf
         log::info("[ PS2 ] Configuring...");
@@ -72,8 +70,9 @@ namespace drivers::ps2 {
         config.first_port_interrupt = false;
         config.second_port_interrupt = false;
         config.first_port_translation = false;
-        config.first_port_clock = false;
+        config.first_port_clock = true;
         write_config(config);
+        flush_buffers(); // Flush
 
         // self test
         log::info("[ PS2 ] Performing self-test...");
@@ -88,6 +87,7 @@ namespace drivers::ps2 {
             return -ENODEV;
         }
         write_config(saved_config);
+        flush_buffers(); // Flush
 
         // check port count (1 or 2 bc like its hardcoded max 2 smh old hardware bad)
         bool dual_channel = false;
@@ -99,9 +99,10 @@ namespace drivers::ps2 {
             x64::outb(INPUT_PORT, 0xA7);
             wait_for_command_completion();
             config.second_port_interrupt = false;
-            config.second_port_clock = false;
+            config.second_port_clock = true;
             write_config(config);
         }
+        flush_buffers(); // Flush
 
         // reenable
         log::info("[ PS2 ] Enabling ports...");
@@ -117,41 +118,49 @@ namespace drivers::ps2 {
             final_config.second_port_clock = false;
         }
         write_config(final_config);
+        flush_buffers(); // Flush
 
         // reset
         log::info("[ PS2 ] Resetting devices...");
         reset_device(1);
+        flush_buffers(); // Flush
 
-        send_data_to_device(1, 0xF5); // Disable scanning
-        wait_for_read();
-        const auto ack = x64::inb(OUTPUT_PORT);
-        if (ack != 0xFA)
+        // Disable scanning
+        send_data_to_device(1, 0xF5);
+        if (!wait_for_ack())
             log::warn("[ PS2 ] Failed to disable PS2 scanning!");
 
-        send_data_to_device(1, 0xF2); // Identify
-        wait_for_read();
-        const auto identify_ack = x64::inb(OUTPUT_PORT);
-        if (identify_ack != 0xFA)
-            log::warn("[ PS2 ] Identify ACK unexpected: %x", identify_ack);
+        // Identify
+        send_data_to_device(1, 0xF2);
+        if (!wait_for_ack())
+            log::warn("[ PS2 ] Identify ACK unexpected");
 
+        // id1 id2
         wait_for_read();
         auto id1 = x64::inb(OUTPUT_PORT);
-        wait_for_read();
-        auto id2 = x64::inb(OUTPUT_PORT);
+        uint8_t id2 = 0x0;
+        if (id1 == 0xAB) {
+            wait_for_read();
+            id2 = x64::inb(OUTPUT_PORT);
+        }
 
+        // Enable Scanning
+        flush_buffers(); // Flush
         send_data_to_device(1, 0xF4);
-        wait_for_read();
-        const auto enable_ack = x64::inb(OUTPUT_PORT);
-        if (enable_ack != 0xFA)
-            log::warn("[ PS2 ] Enable scanning ACK unexpected: %x", enable_ack);
+        if (!wait_for_ack())
+            log::warn("[ PS2 ] Enable scanning ACK unexpected");
 
+        // idk
         send_data_to_device(1, 0xF0);
-        send_data_to_device(1, 1);
-        wait_for_read();
-        const auto set_scancode_ack = x64::inb(OUTPUT_PORT);
-        if (set_scancode_ack != 0xFA)
-            log::warn("[ PS2 ] Set scancode ACK unexpected: %x", set_scancode_ack);
+        if (!wait_for_ack())
+            log::warn("[ PS2 ] Something wrong '164'");
 
+        // Set scancode
+        send_data_to_device(1, 1);
+        if (!wait_for_ack())
+            log::warn("[ PS2 ] Set scancode ACK unexpected");
+
+        // Install IRQ
         if (id1 == 0xAB) {
             log::info("[ PS2 ] Keyboard on port 1");
             irq_context ctx;
@@ -168,6 +177,7 @@ namespace drivers::ps2 {
         } else {
             log::warn("[ PS2 ] Unknown device %x, %x on port 1", id1, id2);
         }
+        log::info("%x %x", id1, id2);
         if (dual_channel) {
             reset_device(2);
         }
@@ -175,8 +185,7 @@ namespace drivers::ps2 {
         uacpi_free_resources(kb_res);
         x64::set_INT_flag(true);
         log::info("[ PS2 ] Flushing buffers...");
-        while (read_status().output_buffer_status == true)
-            x64::inb(OUTPUT_PORT);
+        flush_buffers(); // Flush
         return UACPI_STATUS_OK;
     }
 
@@ -228,6 +237,22 @@ namespace drivers::ps2 {
         log::warn("[ PS2 ] Command timed out!");
     }
 
+    bool wait_for_ack(const int max_polls) {
+        for (int i = 0; i < max_polls; i++) {
+            if (read_status().output_buffer_status) {
+                uint8_t b = x64::inb(OUTPUT_PORT);
+                if (b == 0xFA) return true;
+                if (b == 0xFE) return false; // resend
+            }
+        }
+        return false;
+    }
+
+    void flush_buffers() {
+        while (read_status().output_buffer_status == true)
+            x64::inb(OUTPUT_PORT);
+    }
+
     void send_data_to_device(const i8 device, const u8 data) {
         if (device == 1) {
             wait_for_command_completion();
@@ -258,6 +283,9 @@ namespace drivers::ps2 {
     }
 
     void keyboard_interrupt(const IDT::ISR_Registers* regs) {
+        auto st = x64::inb(0x64);
+        if (!(st & 1))
+            return;
         const u8 raw = x64::inb(OUTPUT_PORT);
 
         if (raw == 0xE0) {

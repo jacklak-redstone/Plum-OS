@@ -563,7 +563,7 @@ namespace USB {
         device->set_root_port_id(port_id);
         device->set_output_ctx(reinterpret_cast<void *>(m_dcbaa[slot_id]));
 
-        //_enumerate_device(device);
+        _enumerate_device(device);
     }
 
     void xhci_driver::_enumerate_device(xhci_device *device) {
@@ -571,8 +571,8 @@ namespace USB {
         uint8_t slot_id = device->get_slot();
         uint8_t port_speed = device->get_speed();
 
-        //bool is_root_device = (device->route_string() == 0);
-        //uint8_t port_index = port_id - 1;
+        bool is_root_device = (device->route_string() == 0);
+        uint8_t port_index = port_id - 1;
 
         // Configure the input context for Address Device command
         uint16_t max_packet_size = _initial_max_packet_size(port_speed);
@@ -584,12 +584,12 @@ namespace USB {
         int32_t rc = -1;
         for (uint8_t attempt = 0; attempt < 3; attempt++) {
             rc = _get_device_descriptor(device, &desc, 8);
-            if (rc == 0) break;
-            //_clear_tt_buffer(device);
             Time::Sleep(10);
         }
         if (rc != 0)
             log::error("xhci: failed to read device descriptor for slot %u", slot_id);
+
+        log::info("%u", desc.iSerialNumber);
     }
 
     uint16_t xhci_driver::_initial_max_packet_size(uint8_t speed) {
@@ -774,56 +774,49 @@ namespace USB {
     // (e.g. hub task and HCD task both sending control transfers to the hub).
 
     //device->set_ctrl_completed(false);
-//
-    //ring->enqueue(reinterpret_cast<xhci_trb_t*>(&setup));
-    //if (length > 0) {
-    //    ring->enqueue(reinterpret_cast<xhci_trb_t*>(&data));
-    //}
-    //ring->enqueue(reinterpret_cast<xhci_trb_t*>(&status));
-//
+
+    ring->enqueue(reinterpret_cast<xhci_trb_t*>(&setup));
+    if (length > 0) {
+        ring->enqueue(reinterpret_cast<xhci_trb_t*>(&data));
+    }
+    ring->enqueue(reinterpret_cast<xhci_trb_t*>(&status));
+
     //// VL805 quirk: avoid ringing the doorbell near the SOF boundary for
     //// FS non-periodic transfers behind a hub (TT babble avoidance).
-    //if (device->route_string() != 0 &&
-    //    device->get_speed() == XHCI_USB_SPEED_FULL_SPEED) {
-    //    for (uint32_t tries = 0; tries < 20; tries++) {
-    //        if ((_read_mfindex() & 0x7) != 0)
-    //            break;
-    //        Time::Sleep(10);
-    //    }
-    //}
-//
-    //_ring_doorbell(device->get_slot(), XHCI_DOORBELL_TARGET_CONTROL_EP_RING);
-//
-    //constexpr uint64_t XFER_TIMEOUT_MS = 5000;
-    //uint64_t deadline = clock::now_ns() + XFER_TIMEOUT_MS * 1000000ULL;
-//
-    //_process_event_ring();
-    //m_event_ring->finish_processing();
-//
-    //while (!device->ctrl_completed() && clock::now_ns() < deadline) {
-    //    wait_for_event();
-    //    _process_event_ring();
-    //    m_event_ring->finish_processing();
-    //}
-//
-    //if (!device->ctrl_completed()) {
-    //    log::error("xhci: control transfer timed out");
-    //    return -1;
-    //}
-//
-    //if (device->ctrl_result().completion_code != XHCI_TRB_COMPLETION_CODE_SUCCESS) {
-    //    if (device->ctrl_result().completion_code == XHCI_TRB_COMPLETION_CODE_STALL_ERROR) {
-    //        (void)_recover_stalled_control_endpoint(device);
-    //    }
-    //    log::warn("xhci: control transfer failed: %s",
-    //               trb_completion_code_to_string(device->ctrl_result().completion_code));
-    //    return -1;
-    //}
-//
-    //if (buffer && length > 0 && is_in) {
-    //    mem::memcpy(buffer, dma_buffer, length);
-    //}
-//
+    if (device->route_string() != 0 &&
+        device->get_speed() == XHCI_USB_SPEED_FULL_SPEED) {
+        for (uint32_t tries = 0; tries < 20; tries++) {
+            if ((_read_mfindex() & 0x7) != 0)
+                break;
+            Time::Sleep(10);
+        }
+    }
+
+    m_doorbell_manager->ring_doorbell(device->get_slot(), XHCI_DOORBELL_TARGET_CONTROL_EP_RING);
+
+    constexpr uint64_t XFER_TIMEOUT_MS = 5;
+    uint64_t deadline = Time::tick + XFER_TIMEOUT_MS * 1ULL;
+
+    _process_events();
+    m_event_ring->flush_unprocessed_events();
+
+    while (Time::tick < deadline) {
+        Time::Sleep(100);
+        _process_events();
+        m_event_ring->flush_unprocessed_events();
+    }
+
+    if (buffer && length > 0 && is_in) {
+        mem::memcpy(buffer, dma_buffer, length);
+    }
+
     return 0;
 }
+
+    uint32_t xhci_driver::_read_mfindex() const {
+        if (!m_runtime_regs) {
+            return 0xffffu;
+        }
+        return m_runtime_regs->mf_index & 0x3fff;
+    }
 }

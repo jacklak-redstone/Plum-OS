@@ -11,6 +11,7 @@
 #include "std/string.h"
 #include "kernel/linker_info.hpp"
 #include "User_Programs/Chess/main.hpp"
+#include "User_Programs/MyCraft/main.hpp"
 
 struct Command {
     const char *name;
@@ -24,7 +25,7 @@ inline uint64_t range(void *a, void *b) {
 
 void list_commands(int argc, char** argv);
 
-Command commands[11] = {
+Command commands[12] = {
     {"help", list_commands},
     {
         "clear", [](int argc, char** argv) {
@@ -34,126 +35,130 @@ Command commands[11] = {
         "chess", [](int argc, char** argv) {
             Chess::main(argc, argv);
         }
-    },
-    {
-        "poweroff", [](int argc, char** argv) {
-            std::printf("&c\tShutting down in 5s (press ENTER to cancel!)\n");
-            if (!Time::WaitForKey(5000, kb::key_code::KEY_ENTER)) {
-                asm volatile("outw %0, %1" : : "a"(static_cast<uint16_t>(0x2000)), "Nd"(static_cast<uint16_t>(0x604)));
-                // QEMU only
-                std::printf("&4Unable to shut down try shutting down manually\n");
-            } else {
-                std::printf("&a\tShutdown Canceled!\n");
-            }
+    },{
+        "mycraft", [](int argc, char** argv) {
+            MyCraft::main(argc, argv);
         }
     },
-    {
-        "sleep", [](int argc, char** argv) {
-            uint64_t wait = 1;
-            uint8_t unit = true; // ms, s
-            bool us = false;
-            if (argc > 1) {
-                for (int i = 1; i < argc; i++) {
-                    if (std::str_cmp(argv[i], "-h")) {
-                        std::printf("&7Usage: &fsleep &e[OPTIONS]\n\n");
-                        std::printf("&eOption     &fMeaning\n");
-                        std::printf("&b-us        &7Micro-seconds mode\n");
-                        std::printf("&b-ms        &7Mili-seconds mode\n");
-                        std::printf("&b-s         &7Seconds mode\n");
-                        std::printf("&b-t TIME    &7Time to wait\n");
-                        std::printf("&b-h         &7This text\n");
-                        return;
-                    } else if (std::str_cmp(argv[i], "-us")) {
-                        us = true;
-                        unit = false;
-                    } else if (std::str_cmp(argv[i], "-ms")) {
-                        unit = false;
-                    } else if (std::str_cmp(argv[i], "-s")) {
-                        unit = true;
-                    } else if (std::str_cmp(argv[i], "-t")) {
-                        if (i+1 < argc) {
-                            wait = std::str_to_int(argv[i+1]);
+        {
+            "poweroff", [](int argc, char** argv) {
+                std::printf("&c\tShutting down in 5s (press ENTER to cancel!)\n");
+                if (!Time::WaitForKey(5000, kb::key_code::KEY_ENTER)) {
+                    asm volatile("outw %0, %1" : : "a"(static_cast<uint16_t>(0x2000)), "Nd"(static_cast<uint16_t>(0x604)));
+                    // QEMU only
+                    std::printf("&4Unable to shut down try shutting down manually\n");
+                } else {
+                    std::printf("&a\tShutdown Canceled!\n");
+                }
+            }
+        },
+        {
+            "sleep", [](int argc, char** argv) {
+                uint64_t wait = 1;
+                uint8_t unit = true; // ms, s
+                bool us = false;
+                if (argc > 1) {
+                    for (int i = 1; i < argc; i++) {
+                        if (std::str_cmp(argv[i], "-h")) {
+                            std::printf("&7Usage: &fsleep &e[OPTIONS]\n\n");
+                            std::printf("&eOption     &fMeaning\n");
+                            std::printf("&b-us        &7Micro-seconds mode\n");
+                            std::printf("&b-ms        &7Mili-seconds mode\n");
+                            std::printf("&b-s         &7Seconds mode\n");
+                            std::printf("&b-t TIME    &7Time to wait\n");
+                            std::printf("&b-h         &7This text\n");
+                            return;
+                        } else if (std::str_cmp(argv[i], "-us")) {
+                            us = true;
+                            unit = false;
+                        } else if (std::str_cmp(argv[i], "-ms")) {
+                            unit = false;
+                        } else if (std::str_cmp(argv[i], "-s")) {
+                            unit = true;
+                        } else if (std::str_cmp(argv[i], "-t")) {
+                            if (i+1 < argc) {
+                                wait = std::str_to_int(argv[i+1]);
+                            }
                         }
                     }
                 }
+                std::printf("&a\tSleeping for &f%l ", std::Output::std_out, wait);
+                auto unit_str = unit ? "seconds" : "mili-seconds";
+                if (us)
+                    unit_str = "micro-seconds";
+                std::printf("&a%s\n", std::Output::std_out, unit_str);
+                auto time = unit ? wait * 1000000 : wait * 1000;
+                if (us)
+                    time = wait;
+                sys_sleep(time);
             }
-            std::printf("&a\tSleeping for &f%l ", std::Output::std_out, wait);
-            auto unit_str = unit ? "seconds" : "mili-seconds";
-            if (us)
-                unit_str = "micro-seconds";
-            std::printf("&a%s\n", std::Output::std_out, unit_str);
-            auto time = unit ? wait * 1000000 : wait * 1000;
-            if (us)
-                time = wait;
-            sys_sleep(time);
-        }
-    },
-    {
-        "heap", [](int argc, char** argv) {
-            bool show_all = false;
-            if (argc > 0) {
-                for (int i = 0; i < argc; i++) {
-                    if (std::str_cmp(argv[i], "-s")) {
-                        show_all = false;
-                    } else if (std::str_cmp(argv[i], "-l")) {
-                        show_all = true;
-                    } else if (std::str_cmp(argv[i], "-h")) {
-                        std::printf("&7Usage: &fheap &e[OPTIONS]\n\n");
-                        std::printf("&eOption     &fMeaning\n");
-                        std::printf("&b-l         &7Show all information about heap\n");
-                        std::printf("&b-s         &7Show only summary\n");
-                        std::printf("&b-h         &7This text\n");
-                        return;
+        },
+        {
+            "heap", [](int argc, char** argv) {
+                bool show_all = false;
+                if (argc > 0) {
+                    for (int i = 0; i < argc; i++) {
+                        if (std::str_cmp(argv[i], "-s")) {
+                            show_all = false;
+                        } else if (std::str_cmp(argv[i], "-l")) {
+                            show_all = true;
+                        } else if (std::str_cmp(argv[i], "-h")) {
+                            std::printf("&7Usage: &fheap &e[OPTIONS]\n\n");
+                            std::printf("&eOption     &fMeaning\n");
+                            std::printf("&b-l         &7Show all information about heap\n");
+                            std::printf("&b-s         &7Show only summary\n");
+                            std::printf("&b-h         &7This text\n");
+                            return;
+                        }
                     }
                 }
+                sys_heap_dump(show_all);
             }
-            sys_heap_dump(show_all);
-        }
-    },
-    {
-        "pci", [](int argc, char** argv) {
-            sys_PCI_TEST();
-        }
-    },
-    {
-        "size", [](int argc, char** argv) {
-            auto kernel_size = range(&Linker::__kernel_start, &Linker::__kernel_end);
-            auto text_size = range(&Linker::__kernel_text_start, &Linker::__kernel_text_end);
-            auto rodata_size = range(&Linker::__kernel_rodata_start, &Linker::__kernel_rodata_end);
-            auto data_size = range(&Linker::__kernel_data_start, &Linker::__kernel_data_end);
-            auto bss_size = range(&Linker::__kernel_bss_start, &Linker::__kernel_bss_end);
-            auto stack_size = range(&Linker::stack_bottom, &Linker::stack_top);
-            auto user_stack_size = range(&Linker::user_stack_bottom, &Linker::user_stack_top);
+        },
+        {
+            "pci", [](int argc, char** argv) {
+                sys_PCI_TEST();
+            }
+        },
+        {
+            "size", [](int argc, char** argv) {
+                auto kernel_size = range(&Linker::__kernel_start, &Linker::__kernel_end);
+                auto text_size = range(&Linker::__kernel_text_start, &Linker::__kernel_text_end);
+                auto rodata_size = range(&Linker::__kernel_rodata_start, &Linker::__kernel_rodata_end);
+                auto data_size = range(&Linker::__kernel_data_start, &Linker::__kernel_data_end);
+                auto bss_size = range(&Linker::__kernel_bss_start, &Linker::__kernel_bss_end);
+                auto stack_size = range(&Linker::stack_bottom, &Linker::stack_top);
+                auto user_stack_size = range(&Linker::user_stack_bottom, &Linker::user_stack_top);
 
-            auto kernel_code_size = text_size + rodata_size;
+                auto kernel_code_size = text_size + rodata_size;
 
-            std::printf("&9\t.text &7size: &a%u%s \t&9.rodata &7size: &a%u%s\n", std::Output::std_out, text_size,
-                        std::format_size(text_size), rodata_size, std::format_size(rodata_size));
-            std::printf("&9\t.data &7size: &a%u%s \t&9.bss &7size: &a%u%s\n", std::Output::std_out, data_size,
-                        std::format_size(data_size), bss_size, std::format_size(bss_size));
-            std::printf("&9\t.stack &7size: &a%u%s \t&9.user_stack &7size: &a%u%s\n", std::Output::std_out, stack_size,
-                        std::format_size(stack_size), user_stack_size, std::format_size(user_stack_size));
-            std::printf("&b\tKernel Code &7size: &a%u%s\n\n", std::Output::std_out, kernel_code_size,
-                        std::format_size(kernel_code_size));
-            std::printf("&e\tTotal kernel &7size: &a%u%s\n", std::Output::std_out, kernel_size,
-                        std::format_size(kernel_size));
-        }
-    },
-    {
-        "usb", [](int argc, char** argv) {
-        }
-    },
-    {
-        "colors", [](int argc, char** argv) {
-            std::printf(
-                "&0 &&00 &1 &&11 &2 &&22 &3 &&33 &4 &&44 &5 &&55 &6 &&66 &7 &&77 &8 &&88 &9 &&99 &a &&aa &b &&bb &c &&cc &d &&dd &e &&ee &f &&ff\n");
-        }
-    },
-    {
-        "partitions", [](int argc, char** argv) {
-            sys_list_parts();
-        }
-    },
+                std::printf("&9\t.text &7size: &a%u%s \t&9.rodata &7size: &a%u%s\n", std::Output::std_out, text_size,
+                            std::format_size(text_size), rodata_size, std::format_size(rodata_size));
+                std::printf("&9\t.data &7size: &a%u%s \t&9.bss &7size: &a%u%s\n", std::Output::std_out, data_size,
+                            std::format_size(data_size), bss_size, std::format_size(bss_size));
+                std::printf("&9\t.stack &7size: &a%u%s \t&9.user_stack &7size: &a%u%s\n", std::Output::std_out, stack_size,
+                            std::format_size(stack_size), user_stack_size, std::format_size(user_stack_size));
+                std::printf("&b\tKernel Code &7size: &a%u%s\n\n", std::Output::std_out, kernel_code_size,
+                            std::format_size(kernel_code_size));
+                std::printf("&e\tTotal kernel &7size: &a%u%s\n", std::Output::std_out, kernel_size,
+                            std::format_size(kernel_size));
+            }
+        },
+        {
+            "usb", [](int argc, char** argv) {
+            }
+        },
+        {
+            "colors", [](int argc, char** argv) {
+                std::printf(
+                    "&0 &&00 &1 &&11 &2 &&22 &3 &&33 &4 &&44 &5 &&55 &6 &&66 &7 &&77 &8 &&88 &9 &&99 &a &&aa &b &&bb &c &&cc &d &&dd &e &&ee &f &&ff\n");
+            }
+        },
+        {
+            "partitions", [](int argc, char** argv) {
+                sys_list_parts();
+            }
+        },
 };
 
 struct TextCommand {

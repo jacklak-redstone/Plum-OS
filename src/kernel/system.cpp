@@ -82,11 +82,12 @@ namespace systemPL {
 
         log::info("USB:\n");
 
-        USB::m_xhci_driver.init_device();
-        USB::m_xhci_driver.start_device();
+        //USB::m_xhci_driver.init_device();
+        //USB::m_xhci_driver.start_device();
 
         RTL8139::driver.Init();
 
+        Time::Sleep(1000);
         drivers::ps2::init(acpi);
         acpi.enumerate_bus();
 
