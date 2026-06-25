@@ -11,11 +11,11 @@ namespace MyCraft {
         const auto pos = *reinterpret_cast<glm::vec3 *>(In->attributes[0].data);
         const auto color = *reinterpret_cast<glm::vec3 *>(In->attributes[1].data);
 
-        const float sy = std::sin(uni.pitch);
-        const float cy = std::cos(uni.pitch);
-
         const float sx = std::sin(uni.yaw);
         const float cx = std::cos(uni.yaw);
+
+        const float sy = std::sin(uni.pitch);
+        const float cy = std::cos(uni.pitch);
 
         glm::vec3 p = pos;
 

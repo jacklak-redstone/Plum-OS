@@ -56,10 +56,10 @@ namespace Paging {
         }
     }
 
-    void Map_memory_vp(uint64_t virt, uint64_t phys, uint64_t size, uint64_t flags) {
+    void Map_memory_vp(uint64_t virt, uint64_t physical, uint64_t size, uint64_t flags) {
         for (uint64_t offset = 0; offset < size; offset += 4096) {
             uint64_t v = virt + offset;
-            uint64_t p = phys + offset;
+            uint64_t p = physical + offset;
 
             const uint64_t pml4_i = (v >> 39) & 0x1FF;
             const uint64_t pdpt_i = (v >> 30) & 0x1FF;

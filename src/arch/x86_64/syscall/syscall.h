@@ -1,107 +1,63 @@
 #pragma once
 #include "Drivers/Keyboard.hpp"
-#include "std/math_types.hpp"
 #include "std/types.hpp"
 #include "Drivers/GPU/OpenPL/OpenPL.hpp"
 
-inline u64 sys_write(const char* str, u64 color) {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(0ULL), "D"(str), "S"(color)
-        : "rcx", "r11", "memory");
-
-    return ret;
-}
-
-inline u64 sys_put_char(char c, u64 color) {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(1ULL), "D"(static_cast<u64>(c)), "S"(color)
-        : "rcx", "r11", "memory");
-
-    return ret;
-}
-
-inline u64 sys_serial_write(const char* c) {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(2ULL), "D"(c)
-        : "rcx", "r11", "memory");
-
-    return ret;
-}
-
-inline u64 sys_serial_put_char(char c) {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(3ULL), "D"(static_cast<u64>(c))
-        : "rcx", "r11", "memory");
-
-    return ret;
-}
-
-inline kb::key_code sys_get_key() {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(4ULL)
-        : "rcx", "r11", "memory");
-
-    return static_cast<kb::key_code>(ret);
-}
-
-inline void sys_sleep(u64 milliseconds) {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(6ULL), "D"(milliseconds)
-        : "rcx", "r11", "memory");
-}
-
-inline void sys_PCI_TEST() {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(7ULL)
-        : "rcx", "r11", "memory");
-}
-
-inline void sys_heap_dump(bool show_all) {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(8ULL), "D"(static_cast<u64>(show_all))
-        : "rcx", "r11", "memory");
-}
-
-inline void sys_swap_framebuffer() {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(9ULL)
-        : "rcx", "r11", "memory");
-}
-
-inline void sys_list_parts() {
-    u64 ret;
-    asm volatile("syscall"
-        : "=a"(ret)
-        : "a"(10ULL)
-        : "rcx", "r11", "memory");
-}
-
-inline void sys_openPL(OpenPL::Context *ctx, uint32_t Operation) {
+inline u64 syscall(u64 id, u64 a1 = 0, u64 a2 = 0, u64 a3 = 0) {
     u64 ret;
     asm volatile(
         "syscall"
         : "=a"(ret)
-        : "a"(21ULL),
-        "D"(ctx),
-        "S"(Operation)
+        : "a"(id), "D"(a1), "S"(a2), "d"(a3)
         : "rcx", "r11", "memory"
     );
+    return ret;
+}
+
+inline u64 sys_write(const char* str, u64 color) {
+    return syscall(0, reinterpret_cast<u64>(str), color);
+}
+
+inline u64 sys_put_char(char c, u64 color) {
+    return syscall(1, (u64)static_cast<u8>(c), color);
+}
+
+inline u64 sys_serial_write(const char* c) {
+    return syscall(2, reinterpret_cast<u64>(c));
+}
+
+inline u64 sys_serial_put_char(char c) {
+    return syscall(3, (u64)static_cast<u8>(c));
+}
+
+inline kb::key_code sys_get_key(bool wait = true) {
+    return static_cast<kb::key_code>(syscall(4, (u64)wait));
+}
+
+inline void sys_exit() {
+    syscall(5);
+}
+
+inline void sys_sleep(u64 milliseconds) {
+    syscall(6, milliseconds);
+}
+
+inline void sys_pci_test() {
+    syscall(7);
+}
+
+inline void sys_heap_dump(bool show_all) {
+    syscall(8, show_all);
+}
+
+inline void sys_swap_framebuffer() {
+    syscall(9);
+}
+
+inline void sys_list_parts() {
+    syscall(10);
+}
+
+inline void sys_openPL(OpenPL::Context *ctx, uint32_t Operation) {
+    syscall(21, reinterpret_cast<u64>(ctx), Operation);
 }

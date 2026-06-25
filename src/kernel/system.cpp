@@ -20,6 +20,7 @@
 #include "Drivers/Network/Drivers/RTL8139.hpp"
 #include "Drivers/hpet/hpet.h"
 #include "uacpi/uacpi.h"
+#include "Drivers/fs/FAT32/fat32.hpp"
 
 extern u64 kernel_address_vert;
 extern u64 kernel_address_phys;
@@ -87,7 +88,6 @@ namespace systemPL {
 
         RTL8139::driver.Init();
 
-        Time::Sleep(1000);
         drivers::ps2::init(acpi);
         acpi.enumerate_bus();
 
@@ -124,6 +124,9 @@ namespace systemPL {
 
         auto device = ahci.request_device(0);
         partition_manager.init(device);
+        partition_manager.list_partitions();
+        fs::FAT32::fat32_manager fat_manager;
+        fat_manager.init(device);
         fb.swap();
 
         enter_user_space();

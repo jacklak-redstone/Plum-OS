@@ -20,7 +20,7 @@ auto validate_user_ptr = [](const u64 ptr) -> bool {
     return ptr != 0;
 };
 
-enum class syscall : u64 {
+enum class syscall_id : u64 {
     write = 0,
     put_char = 1,
     serial_write = 2,
@@ -36,22 +36,25 @@ enum class syscall : u64 {
 };
 
 extern "C" u64 dispatch_syscall(u64 id, u64 arg1, u64 arg2, u64 arg3) {
-    switch (static_cast<syscall>(id)) {
-        case syscall::write:
+    switch (static_cast<syscall_id>(id)) {
+        case syscall_id::write:
             if (!validate_user_ptr(arg1))
                 return static_cast<u64>(-1);
             for (int i = 0; reinterpret_cast<const char*>(arg1)[i] != '\0'; i++) {
                 systemPL::fb.put_char(reinterpret_cast<const char*>(arg1)[i], color_to_rgb(static_cast<Color>(arg2)));
             }
             return 0;
-        case syscall::put_char:
+
+        case syscall_id::put_char:
             systemPL::fb.put_char(static_cast<char>(arg1), color_to_rgb(static_cast<Color>(arg2)));
             return 0;
-        case syscall::serial_put_char:
+
+        case syscall_id::serial_put_char:
             while (!(x64::inb(0x3F8 + 5) & 0x20)) { }
             x64::outb(0x3F8, static_cast<char>(arg1));
             return 0;
-        case syscall::serial_write: {
+
+        case syscall_id::serial_write: {
             if (!validate_user_ptr(arg1))
                 return static_cast<u64>(-1);
             const auto text = reinterpret_cast<const char *>(arg1);
@@ -61,28 +64,37 @@ extern "C" u64 dispatch_syscall(u64 id, u64 arg1, u64 arg2, u64 arg3) {
             }
             return 0;
         }
-	    case syscall::get_key:
+
+	    case syscall_id::get_key:
+            if (arg1 == true)
                 return static_cast<u64>(kb::get_char());
-        case syscall::exit:
+            return static_cast<u64>(kb::read_char());
+
+        case syscall_id::exit:
             return 0;
-        case syscall::sleep:
+
+        case syscall_id::sleep:
             systemPL::fb.swap(); // TODO remove all the swaps everywhere and just keep swapping at a fixed itnerval on a separate thread when we have threads
-            //Time::Sleep(arg1);
             hpet::sleep_us(arg1);
             return 0;
-        case syscall::pci:
+
+        case syscall_id::pci:
             PCI::Test();
             return 0;
-        case syscall::heap:
+
+        case syscall_id::heap:
             heap::dump_heap(arg1);
             return 0;
-        case syscall::swap_framebuffer:
+
+        case syscall_id::swap_framebuffer:
             systemPL::fb.swap();
             return 0;
-        case syscall::list_partitions:
+
+        case syscall_id::list_partitions:
             systemPL::partition_manager.list_partitions();
             return 0;
-        case syscall::OpenPL: {
+
+        case syscall_id::OpenPL: {
             const auto ctx = reinterpret_cast<OpenPL::Context *>(arg1);
             ctx->Swap();
             return 0;

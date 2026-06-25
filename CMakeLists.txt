@@ -89,6 +89,7 @@ set_target_properties(Kernel PROPERTIES
 
 # All Images
 set(FAT_IMG ${CMAKE_SOURCE_DIR}/Images/fat.img)
+set(FAT32_IMG ${CMAKE_SOURCE_DIR}/Images/fat32.img)
 set(DISK_IMG ${CMAKE_SOURCE_DIR}/Images/disk.img)
 set(USB_IMG ${CMAKE_SOURCE_DIR}/Images/usb.img)
 
@@ -133,12 +134,13 @@ set(QEMU_FLAGS
         # ----- AHCI -----
         -device ahci,id=ahci
         -device ide-hd,drive=hd0,bus=ahci.0
-        -drive file=${DISK_IMG},format=raw,if=none,id=hd0
+        -drive file=${FAT32_IMG},format=raw,if=none,id=hd0
         # ----- USB -----
         -device qemu-xhci,id=xhci
-        -device usb-storage,drive=usbstick
-        -drive if=none,id=usbstick,file=${USB_IMG},format=raw
+        #-device usb-storage,drive=usbstick
+        #-drive if=none,id=usbstick,file=${USB_IMG},format=raw
         -device virtio-keyboard-pci
+        -device virtio-mouse-pci
         # ----- NET -----
         -netdev tap,id=n0,ifname=tap0,script=no,downscript=no
         -device rtl8139,netdev=n0

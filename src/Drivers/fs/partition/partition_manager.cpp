@@ -69,9 +69,6 @@ namespace fs::partition {
                 name_buf[j] = static_cast<char>(wc & 0xFF);
             }
 
-            log::info("[ GPT ] Found partition %i with name of '%s'", i, name_buf);
-            auto part_size = static_cast<double>(entry->ending_lba - entry->starting_lba) * static_cast<double>(dev.get_sector_size());
-            log::info("[ GPT ] Partition size: %f%s", part_size, std::format_size(part_size));
             partitions.push_back(*entry);
         }
 
@@ -79,8 +76,11 @@ namespace fs::partition {
         heap::free_align(buf);
     }
 
-    void partition_manager::list_partitions() {
-        for (u32 i = 0; i < header->partition_entry_count; i++) {
+    void partition_manager::list_partitions() const {
+        if (partitions.empty())
+            return;
+
+        for (u32 i = 0; i < partitions.size(); i++) {
             auto partition = &partitions[i];
             if (mem::memcmp(partition->type_guid, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16) == true)
                 continue;
@@ -100,6 +100,20 @@ namespace fs::partition {
             auto part_size = static_cast<double>(partition->ending_lba - partition->starting_lba) * static_cast<double>(device->get_sector_size());
             log::info("[ GPT ] Partition size: %f%s", part_size, std::format_size(part_size));
         }
+    }
+
+    bool partition_manager::get_partition(u32 id, gpt_partition &partition) {
+        if (id >= header->partition_entry_count)
+            return false;
+        auto tmp = &partitions[id];
+        if (mem::memcmp(tmp->type_guid, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16) == true)
+            return false;
+        if (tmp->starting_lba == 0)
+            return false;
+        if (tmp->name[0] == 0)
+            return false;
+        partition = *tmp;
+        return true;
     }
 
     bool partition_manager::validate_gpt() const {

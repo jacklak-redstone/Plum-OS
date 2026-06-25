@@ -198,6 +198,4 @@ namespace kb {
     key_code read_char();
 
     char to_char(key_code code);
-
-    void flush_keyboard();
 }

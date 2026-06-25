@@ -56,6 +56,7 @@ extern "C" void kernel_main() {
 
     setup();
 
+    // TODO pick best framebuffer
     auto* fb = fb_request.response->framebuffers[0];
 
     framebuffer::framebuffer_info fb_info {

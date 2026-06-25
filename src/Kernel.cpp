@@ -117,7 +117,7 @@ Command commands[12] = {
         },
         {
             "pci", [](int argc, char** argv) {
-                sys_PCI_TEST();
+                sys_pci_test();
             }
         },
         {

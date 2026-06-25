@@ -2,6 +2,7 @@
 #include "Drivers/GPU/OpenPL/OpenPL.hpp"
 #include "kernel/Memory/heap.hpp"
 #include "arch/x86_64/syscall/syscall.h"
+#include "std/printf.hpp"
 
 namespace MyCraft {
     using namespace OpenPL;
@@ -11,8 +12,8 @@ namespace MyCraft {
 
     void main(const int argc, char** argv) {
         // One of legacy resolutions
-        const int width = 1024;
-        const int height = 768;
+        const int width = 1920;
+        const int height = 1080;
 
         // Create a context
         Context ctx = {};
@@ -23,7 +24,7 @@ namespace MyCraft {
         pipeline.Fragment_shader = frshader;
         pipeline.near_plane = 0.05f;
         pipeline.far_plane = 1000.0f;
-        pipeline.cull_mode = CullingMode::BACK;
+        pipeline.cull_mode = CullingMode::NONE;
         ctx.bind_pipeline(pipeline);
 
         // Creating Framebuffer and Depthbuffer
@@ -60,10 +61,22 @@ namespace MyCraft {
         float y = 0.0f;
 
         while (true) {
-            ctx.Clear(0x303030);
+            kb::key_code key = sys_get_key(false);
+            if (key == kb::key_code::KEY_ESC) {
+                std::printf("Exiting MyCraft\n");
+                return;
+            }
 
-            p += 0.01f;
-            y += 0.001f;
+            if (key == kb::key_code::KEY_LEFT)
+                p += 0.1f;
+            if (key == kb::key_code::KEY_RIGHT)
+                p -= 0.1f;
+            if (key == kb::key_code::KEY_UP)
+                y += 0.1f;
+            if (key == kb::key_code::KEY_DOWN)
+                y -= 0.1f;
+
+            ctx.Clear(0x303030);
 
             uni.pitch = p;
             uni.yaw = y;

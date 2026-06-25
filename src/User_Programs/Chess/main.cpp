@@ -3,8 +3,8 @@
 #include "arch/x86_64/syscall/syscall.h"
 #include "std/printf.hpp"
 #include "std/types.hpp"
-#include "Drivers/GPU/OpenPL/OpenPL.hpp"
 #include "kernel/Sleep.hpp"
+#include "kernel/system.hpp"
 #include "kernel/Memory/heap.hpp"
 #include "std/string.h"
 
@@ -13,7 +13,7 @@ namespace Chess {
 
     volatile uint32_t frames;
     volatile uint64_t last_tick;
-    Framebuffer fr{};
+    OpenPL::Framebuffer fr{};
 
     void main(const int argc, char** argv) {
         uint32_t w = 1024;
@@ -178,7 +178,8 @@ namespace Chess {
         volatile uint64_t now = Time::tick;
         if (now - last_tick >= 100) {
             std::printf("\t\t\t&fFPS: &e%u     &e%f&bs &fper frame\n", std::Output::std_out, frames, 1.0f / static_cast<float>(frames));
-            std::printf("\t&fScreen Info: &7Unknown (too lazy)  &bScaling&f=&eNearest\n");
+            auto screen = systemPL::fb.get_screen_info();
+            std::printf("\t&fScreen Info: &7width=%u height=%u &bScaling&f=&eNearest\n", std::Output::std_out, screen.width, screen.height);
             std::printf("\t&fFramebuffer Info: &awidth&f=&e%u  &bheight&f=&e%u  &cbpp&f=&e%u\n", std::Output::std_out, fr.width, fr.height, fr.bpp);
             heap::free(fr.framebuffer);
             heap::free(fr.depthbuffer);
