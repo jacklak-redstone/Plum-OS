@@ -61,9 +61,9 @@ namespace IDT {
 
         if (custom_handlers_count[vector] == 0) {
             log::info("[ IDT ] Installed &afirst &7handler for IRQ &a%u", irq_no);
-            const auto iso = IOAPIC::resolve_irq(irq_no);
-            systemPL::ioapic.route(iso.gsi, vector, IOAPIC::Fixed,
-                                   iso.level_triggered ? IOAPIC::TriggerMode::LEVEL : IOAPIC::TriggerMode::EDGE,
+            const auto iso = apic::IOAPIC::resolve_irq(irq_no);
+            systemPL::ioapic.route(iso.gsi, vector, apic::IOAPIC::Fixed,
+                                   iso.level_triggered ? apic::IOAPIC::TriggerMode::LEVEL : apic::IOAPIC::TriggerMode::EDGE,
                                    iso.active_low, false);
         } else {
             log::success("[ IDT ] &aAdded shared &7handler for IRQ &a%u", irq_no);
@@ -98,7 +98,7 @@ namespace IDT {
         }
 
         if (regs->int_no >= 32) {
-            write_apic(0xB0, 0);
+            apic::write_apic(0xB0, 0);
             if (PIC_enabled)
                 x64::pic_send_eoi(regs->int_no - 32);
         }

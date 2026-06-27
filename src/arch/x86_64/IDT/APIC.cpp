@@ -6,11 +6,14 @@
 #include <uacpi/uacpi.h>
 
 #include "acpi.h"
+#include "lapic.h"
+#include "Drivers/hpet/hpet.h"
+#include "kernel/Sleep.hpp"
 #include "kernel/system.hpp"
 #include "kernel/Memory/mem_helper.h"
 #include "uacpi/acpi.h"
 
-namespace IDT {
+namespace apic {
     volatile uint32_t* apic = nullptr;
 
     void write_apic(const uint32_t reg, const uint32_t value) {

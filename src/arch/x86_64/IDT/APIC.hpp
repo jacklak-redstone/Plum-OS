@@ -1,7 +1,7 @@
 #pragma once
 #include "std/types.hpp"
 
-namespace IDT {
+namespace apic {
     extern volatile uint32_t* apic;
     constexpr uint32_t SVR = 0xF0;
 
