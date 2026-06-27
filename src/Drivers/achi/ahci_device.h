@@ -9,6 +9,7 @@ namespace drivers::ahci {
         ~ahci_device() = default;
 
         bool initialize();
+
         bool read(const u64 start, const u32 count, u16* buffer) const {
             return port->read(start, count, buffer, sector_size);
         }
@@ -18,7 +19,7 @@ namespace drivers::ahci {
                 return false;
             i32 remaining = count;
             u64 current_sector = start;
-            u16 temp[256];
+            const auto temp = static_cast<u16 *>(heap::malloc_align(4096, 512));
             while (remaining > 0) {
                 if (!read(current_sector, 1, temp)) {
                     return false;
@@ -29,6 +30,7 @@ namespace drivers::ahci {
                 remaining -= static_cast<i32>(sector_size);
                 current_sector++;
             }
+            heap::free_align(temp);
             return true;
         }
 

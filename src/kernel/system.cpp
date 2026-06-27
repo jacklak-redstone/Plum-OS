@@ -127,6 +127,9 @@ namespace systemPL {
         partition_manager.list_partitions();
         fs::FAT32::fat32_manager fat_manager;
         fat_manager.init(device);
+        fat_manager.read(0, 3, 2, 2);
+        log::info("");
+        fat_manager.read(0, 0, 1, 1);
         fb.swap();
 
         enter_user_space();

@@ -39,8 +39,35 @@ namespace fs::FAT32 {
         eBPB ebpb;
     } __attribute__((packed));
 
+    struct file_entry {
+        uint8_t file_name[11];
+        uint8_t attributes;
+        uint8_t rsvd_WindowsNT;
+        uint8_t create_time_tenth;
+        uint16_t creation_time;
+        uint16_t creation_date;
+        uint16_t last_accessed_date;
+        uint16_t first_cluster_high;
+        uint16_t last_modification_time;
+        uint16_t last_modification_date;
+        uint16_t first_cluster_low;
+        uint32_t file_size;
+    } __attribute__((packed));
+
+    struct long_file_name {
+        uint8_t order;
+        uint16_t name_1[5];
+        uint8_t attribute;
+        uint8_t long_entry_type;
+        uint8_t checksum_short_name;
+        uint16_t name_2[6];
+        uint16_t zero;
+        uint16_t name_3[2];
+    } __attribute__((packed));
+
     struct fat_info {
         partition::gpt_partition gpt_partition;
+        uint32_t data_start;
         BPB bpb;
     } __attribute__((packed));
 
@@ -49,7 +76,7 @@ namespace fs::FAT32 {
         fat32_manager() = default;
         ~fat32_manager();
         void init(drivers::ahci::ahci_device& dev);
-
+        void read(uint32_t first_cluster, uint8_t partition, int8_t depth = 2, int8_t origin_d = 2);
     private:
 
         drivers::ahci::ahci_device* device = nullptr;
