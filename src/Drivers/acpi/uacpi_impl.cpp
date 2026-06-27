@@ -232,10 +232,10 @@ uacpi_status uacpi_kernel_handle_firmware_request(uacpi_firmware_request* req) {
 
 uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32 irq, uacpi_interrupt_handler handler, uacpi_handle ctx, uacpi_handle *out_irq_handle) {
     const auto vector = static_cast<u8>(irq + 32);
-    const auto iso = IDT::IOAPIC::resolve_irq(static_cast<u8>(irq));
+    const auto iso = apic::IOAPIC::resolve_irq(static_cast<u8>(irq));
     systemPL::ioapic.route(iso.gsi, vector,
-                           IDT::IOAPIC::DeliveryMode::Fixed,
-                           iso.level_triggered ? IDT::IOAPIC::TriggerMode::LEVEL : IDT::IOAPIC::TriggerMode::EDGE,
+                           apic::IOAPIC::DeliveryMode::Fixed,
+                           iso.level_triggered ? apic::IOAPIC::TriggerMode::LEVEL : apic::IOAPIC::TriggerMode::EDGE,
                            iso.active_low, false);
     IDT::install_uacpi_handler(handler, vector, ctx);
     *out_irq_handle = reinterpret_cast<uacpi_handle>(static_cast<u64>(irq));

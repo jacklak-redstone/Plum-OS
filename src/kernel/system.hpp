@@ -19,7 +19,7 @@ namespace systemPL {
     extern framebuffer::framebuffer fb;
     extern fs::partition::partition_manager partition_manager;
     extern drivers::acpi::acpi acpi;
-    extern IDT::IOAPIC ioapic;
+    extern apic::IOAPIC ioapic;
 
     void Init(framebuffer::framebuffer_info framebuffer_info, u64 heap_addr);
 }

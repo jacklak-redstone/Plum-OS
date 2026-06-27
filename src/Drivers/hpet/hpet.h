@@ -2,6 +2,10 @@
 #include "std/types.hpp"
 
 namespace hpet {
+    inline volatile u64 frequency = 0;
+    inline volatile u64 ticks_per_ms = 0;
+    inline volatile u64 ticks_per_us = 0;
+
     constexpr i32 CAPABILITY_REGISTER_OFFSET = 0x0;
     constexpr i32 CONFIGURATION_REGISTER_OFFSET = 0x10;
     constexpr i32 INTERRUPT_STATUS_REGISTER_OFFSET = 0x20;

@@ -12,9 +12,6 @@ namespace hpet {
     volatile u32 used_vectors = 0;
     timer timers[32];
     volatile bool is_timer_armed[32];
-    volatile u64 frequency = 0;
-    volatile u64 ticks_per_ms = 0;
-    volatile u64 ticks_per_us = 0;
 
     void timer::init(const u8 num) {
         timer_num = num;
